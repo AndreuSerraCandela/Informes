@@ -30,6 +30,29 @@ table 7001241 "Destinatarios Informes"
             caption = 'Correo Electrónico';
             DataClassification = ToBeClassified;
         }
+        field(4; "Campo Destinatario"; Integer)
+        {
+            caption = 'Campo Destinatario';
+            trigger OnLookup()
+            var
+                Informes: Record "Informes";
+                Campos: Record Field;
+            begin
+                if Informes.Get(Id) then begin
+                    Campos.SetRange(Campos.TableNo, Informes."Tabla filtros");
+                    If Page.Runmodal(9806, Campos) = Action::LookupOK then
+                        "Campo Destinatario" := Campos."No.";
+                end;
+            end;
+
+        }
+        field(5; Valor; Text[250])
+        {
+            caption = 'Valor Filtro';
+            DataClassification = ToBeClassified;
+        }
+
+
 
     }
     keys

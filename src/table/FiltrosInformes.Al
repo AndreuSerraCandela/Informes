@@ -17,8 +17,11 @@ table 7001242 "Filtros Informes"
                 Informes: Record "Informes";
                 Campos: Record Field;
             begin
-                if Informes.Get(Id) then
+                if Informes.Get(Id) then begin
                     Campos.SetRange(Campos.TableNo, Informes."Tabla filtros");
+                    If Page.Runmodal(9806, Campos) = Action::LookupOK then
+                        Campo := Campos."No.";
+                end;
             end;
 
         }

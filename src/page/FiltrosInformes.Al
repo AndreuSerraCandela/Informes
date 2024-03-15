@@ -17,6 +17,10 @@ page 7001197 "Filtros Informes"
                 {
                     ApplicationArea = All;
                 }
+                field("Nombre Campo"; NombreCampo())
+                {
+                    ApplicationArea = All;
+                }
                 field("Valor"; Rec."Valor")
                 {
                     ApplicationArea = All;
@@ -32,5 +36,16 @@ page 7001197 "Filtros Informes"
             }
         }
     }
-
+    procedure NombreCampo(): Text
+    var
+        Campos: Record Field;
+        Informes: Record "Informes";
+    begin
+        if Informes.Get(Rec.Id) then begin
+            Campos.SetRange(Campos.TableNo, Informes."Tabla filtros");
+            Campos.SetRange("No.", Rec.Campo);
+            If Campos.FindFirst then
+                exit(Campos."Field Caption");
+        end;
+    end;
 }

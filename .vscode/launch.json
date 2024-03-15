@@ -12,7 +12,7 @@
             "startupObjectId": 1927,
             "startupObjectType": "Page",
             "environmentType": "OnPrem",
-            "schemaUpdateMode": "Synchronize",
+            "schemaUpdateMode": "ForceSync",
             "breakOnError": true,
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,

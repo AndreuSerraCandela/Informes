@@ -7,7 +7,7 @@ table 7001240 Informes
         {
             caption = 'Id';
             DataClassification = ToBeClassified;
-            TableRelation = "Informes"."Id";
+            AutoIncrement = true;
         }
         field(2; Descripcion; Text[250])
         {
@@ -18,21 +18,32 @@ table 7001240 Informes
         {
             caption = 'Periodicidad';
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                If "Fecha Primera Ejecución" <> 0D then
+                    "Próxima Fecha" := CalcDate(Periodicidad, "Fecha Primera Ejecución");
+            end;
         }
         field(4; "Fecha Primera Ejecución"; Date)
         {
             caption = 'Fecha 1ª Ejecución';
             DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                "Próxima Fecha" := CalcDate(Periodicidad, "Fecha Primera Ejecución");
+            end;
         }
-        field(5; Informe; Integer)
+        field(5; Informe; Enum Informes)
         {
-            caption = 'Tabla';
+            caption = 'Informe';
             DataClassification = ToBeClassified;
-            TableRelation = AllObjWithCaption."Object ID" WHERE("Object Type" = filter(Report | Page));
             trigger OnValidate()
             begin
                 Case Informe of
-
+                    Informes::"Contratos x Empresa":
+                        Validate("Tabla filtros", 36);
+                    Informes::"Estadisticas Contabilidad":
+                        Validate("Tabla filtros", 17);
                 End;
             end;
         }
@@ -41,6 +52,37 @@ table 7001240 Informes
             caption = 'Tabla para filtros';
             TableRelation = AllObjWithCaption."Object ID" WHERE("Object Type" = CONST(Table));
         }
+        field(7; "Próxima Fecha"; Date)
+        {
+            caption = 'Fecha 1ª Ejecución';
+            DataClassification = ToBeClassified;
+        }
+        field(9; "Plantilla Excel"; Blob)
+        {
+            caption = 'Plantilla Excel';
+            DataClassification = ToBeClassified;
+        }
+        field(10; "Crear Tarea"; Boolean)
+        {
+            caption = 'Crear Tarea';
+            DataClassification = ToBeClassified;
+        }
+        field(11; "Descripcion Tarea"; Text[250])
+        {
+
+        }
+        field(13; "Id Objeto"; Integer)
+        {
+            TableRelation = AllObjWithCaption."Object ID" WHERE("Object Type" = field("Tipo Objeto"));
+        }
+        field(14; "Tipo Objeto"; Option)
+        {
+            OptionMembers = ,,,,,,,,"Page","Query";
+            OptionCaption = ',,,,,,,,Página,Consulta';
+            caption = 'Tipo Objeto';
+            DataClassification = ToBeClassified;
+        }
+
 
     }
     keys

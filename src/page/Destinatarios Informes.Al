@@ -20,6 +20,17 @@ page 7001196 "Destinatarios Informes"
                 {
                     ApplicationArea = All;
                 }
+
+                field("Campo Destinatario"; Rec."Campo Destinatario")
+                {
+
+
+                }
+                field(Valor; Rec.Valor)
+                {
+
+                }
+
             }
         }
     }
