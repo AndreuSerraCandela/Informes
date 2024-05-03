@@ -2,6 +2,8 @@ enum 7001190 Informes
 {
     value(0; "Contratos x Empresa") { }
     value(1; "Estadisticas Contabilidad") { }
+    value(2; "Tablas") { }
+    value(3; "Web Service") { }
 }
 enum 7001191 Funciones
 {
@@ -16,5 +18,10 @@ enum 7001191 Funciones
     value(7; "GetImpFac") { Caption = 'Importe Facturas'; }
     value(8; "GetImpAbo") { Caption = 'Importe Abonos'; }
     value(9; "GetTotCont") { Caption = 'Total Contrato'; }
+    value(10; "Cliente_Proveedor") { Caption = 'Nombre Tercero'; }
+    value(11; "Año") { Caption = 'Año'; }
+    value(12; "Mes") { Caption = 'Mes'; }
+    value(13; "Semana") { Caption = 'Semana'; }
+    value(14; "Diferencia") { Caption = 'Diferencia'; }
 
 }

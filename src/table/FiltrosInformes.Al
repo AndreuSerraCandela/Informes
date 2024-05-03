@@ -16,11 +16,20 @@ table 7001242 "Filtros Informes"
             var
                 Informes: Record "Informes";
                 Campos: Record Field;
+                Columna: Record "Columnas Informes";
             begin
                 if Informes.Get(Id) then begin
-                    Campos.SetRange(Campos.TableNo, Informes."Tabla filtros");
+                    Columna.SetRange(Columna."Id", Informes."Id");
+                    If not Columna.FindFirst() then begin
+                        Informes.InitDefaultColumns();
+                        Informes.GetColumns(Informes);
+                        Commit();
+                        Columna.FindFirst();
+                    end;
+                    Campos.SetRange(Campos.TableNo, Columna.Table);
                     If Page.Runmodal(9806, Campos) = Action::LookupOK then
                         Campo := Campos."No.";
+
                 end;
             end;
 

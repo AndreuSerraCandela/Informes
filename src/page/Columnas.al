@@ -2,7 +2,7 @@ page 7001192 "Columnas Informes"
 {
     Caption = 'Columnas Informes';
     //DeleteAllowed = false;
-    InsertAllowed = false;
+    //InsertAllowed = false;
     PageType = ListPart;
     SourceTable = "Columnas Informes";
 
@@ -59,10 +59,42 @@ page 7001192 "Columnas Informes"
 
     actions
     {
-        area(processing)
+        area(Processing)
         {
+            action("Solo Seleccionados")
+            {
+                ApplicationArea = All;
+                Image = Filter;
+                trigger OnAction()
+                begin
+                    Rec.setrange(Include, true);
+                end;
+            }
+            action(Todos)
+            {
+                ApplicationArea = All;
+                Image = ClearFilter;
+                trigger OnAction()
+                begin
+                    Rec.setrange(Include);
+                end;
+            }
         }
+
     }
+    procedure DeleteColumns()
+    begin
+        Rec.DeleteAll();
+    end;
+
+    procedure IncludeIsChanged(): Boolean
+    var
+        LocalDirty: Boolean;
+    begin
+        LocalDirty := IsModified;
+        Clear(IsModified);
+        exit(LocalDirty);
+    end;
 
     var
         RecRef: RecordRef;

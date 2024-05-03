@@ -5,7 +5,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
     var
         TempExcelBuffer: Record "Excel Buffer" temporary;
         ContratosLblEP: Label 'Contratos';
-        ExcelFileNameEPR: Label 'Contratos_%1_%2';
+        ExcelFileNameEPR: Text;//Label 'Contratos_%1_%2';
         RecordLink: Record "Record Link";
         RecordLinkMgt: Codeunit "Record Link Management";
         BgText: Text;
@@ -23,22 +23,31 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         InExcelStream: Instream;
         Continuar: Boolean;
         FechaTarea: Date;
-        Campos: Record "Campos Informes";
+        Campos: Record "Columnas Informes";
         RecRef: RecordRef;
+        Contrato: Record "Sales Header";
         Valor: Variant;
         FieldRef: FieldRef;
         Id: RecordId;
         FieldT: FieldType;
         Fecha: Date;
+        Campo: Integer;
+        NoContrato: Code[20];
+        "Periodos": Record "Periodos Informes";
+        Control: Codeunit ControlInformes;
+        No: Text;
     begin
         TempExcelBuffer.Reset();
         TempExcelBuffer.DeleteAll();
         FechaTarea := CalcDate('1S', WorkDate());
-        procesar(true);
         RecRef.Open(36, true);
+        RecReftemp.Open(36, true);
         Informes.Get(Filtros.Id);
+        ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
+        if Destinatario."Nombre Informe" <> '' then
+            ExcelFileNameEPR := ConvertStr(Destinatario."Nombre Informe", ' ', '_');
         Row := 1;
-        EnterCell(TempExcelBuffer, Row, 1, StrSubstNo('%1 de %2', Informes.Descripcion, Informes."Próxima Fecha"), true, false, '', TempExcelBuffer."Cell Type"::Text);
+        EnterCell(TempExcelBuffer, Row, 1, StrSubstNo('%1 de %2', Informes.Descripcion, DT2Date(Informes."Earliest Start Date/Time")), true, false, '', TempExcelBuffer."Cell Type"::Text);
         Row += 1;
         EnterCell(TempExcelBuffer, Row, 1, 'Filtros:', true, false, '', TempExcelBuffer."Cell Type"::Text);
         If Filtros.FindSet() then
@@ -46,152 +55,28 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                 Row += 1;
                 If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                 If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
-
-                Case
-                    Filtros.Campo Of
-                    Rec.FieldNo("Sell-to Customer No."):
-                        begin
-                            Rec.SetRange("Sell-to Customer No.", Filtros.Valor);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Sell-to Customer Name"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    // Rec.FieldNo("No."):
-                    //     Rec.SetFilter("No.", '%1', Filtros.Valor);
-                    Rec.FieldNo("Salesperson Code"):
-                        begin
-                            Rec.SetFILTER("Salesperson Code", '%1', Filtros.Valor);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Salesperson Code"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    Rec.FieldNo("Posting Date"):
-                        begin
-                            Rec.SetRange("Posting Date", DesdeFecha, HastaFecha);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Posting Date"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            if DesdeFecha <> 0D then
-                                EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    Rec.FieldNo("Fecha inicial proyecto"):
-                        begin
-                            Rec.SetRange("Fecha inicial proyecto", DesdeFecha, HastaFecha);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Fecha inicial proyecto"), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            if DesdeFecha <> 0D then
-                                EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    Rec.FieldNo("Fecha fin proyecto"):
-                        begin
-                            Rec.SetRange("Fecha fin proyecto", DesdeFecha, HastaFecha);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Fecha fin proyecto"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            if DesdeFecha <> 0D then
-                                EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    Rec.FieldNo("Fecha Estado"):
-                        begin
-                            Rec.SetRange("Fecha Estado", DesdeFecha, HastaFecha);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Fecha Estado"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            if DesdeFecha <> 0D then
-                                EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    rec.FieldNo("Fecha renovacion"):
-                        begin
-                            Rec.SetRange("Fecha renovacion", DesdeFecha, HastaFecha);
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Fecha renovacion"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            if DesdeFecha <> 0D then
-                                EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    rec.FieldNo("Ofrecida ampliación"):
-                        begin
-                            case Filtros.Valor of
-                                'Sí':
-                                    Rec.SetRange("Ofrecida ampliación", true);
-                                'No':
-                                    Rec.SetRange("Ofrecida ampliación", false);
-                                else
-                                    Rec.Setfilter("Ofrecida ampliación", Filtros.Valor);
-                            end;
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Ofrecida ampliación"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    Rec.FieldNo(Tipo):
-                        begin
-                            case Filtros.Valor of
-                                'Anual':
-                                    Rec.SetRange(Tipo, Rec.Tipo::Anual);
-                                'Por Campaña':
-                                    Rec.SetRange(Tipo, Rec.Tipo::"Por Campaña");
-                                'Otros':
-                                    Rec.SetRange(Tipo, Rec.Tipo::Otros);
-                                'Por Temporada':
-                                    Rec.SetRange(Tipo, Rec.Tipo::"Por Temporada");
-                                'Reserva':
-                                    Rec.SetRange(Tipo, Rec.Tipo::Reserva);
-                                'Propuesta':
-                                    Rec.SetRange(Tipo, Rec.Tipo::Propuesta);
-                                else
-                                    Rec.Setfilter(Tipo, Filtros.Valor);
-                            end;
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption(Tipo), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                        end;
-                    Rec.FieldNo(Estado):
-                        begin
-                            case Filtros.Valor of
-                                'Pendiente de Firma':
-                                    Rec.SetRange(Estado, Rec.Estado::"Pendiente de Firma");
-                                'Firmado':
-                                    Rec.SetRange(Estado, Rec.Estado::Firmado);
-                                'Anulado':
-                                    Rec.SetRange(Estado, Rec.Estado::Anulado);
-                                'Cancelado':
-                                    Rec.SetRange(Estado, Rec.Estado::Cancelado);
-                                'Sin Montar':
-                                    Rec.SetRange(Estado, Rec.Estado::"Sin Montar");
-                                else
-                                    Rec.Setfilter(Estado, Filtros.Valor);
-                            end;
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption(Estado), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-
-                        end;
-                    Rec.FieldNo(Renovado):
-                        begin
-                            case Filtros.Valor of
-                                'Sí':
-                                    Rec.SetRange(Renovado, true);
-                                'No':
-                                    Rec.SetRange(Renovado, false);
-                                else
-                                    Rec.Setfilter(Renovado, Filtros.Valor);
-                            end;
-                            EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption(Renovado), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                            EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-
-                        end;
-                End;
-            until Filtros.Next() = 0;
-        Case
-           Destinatario."Campo Destinatario" Of
-            Rec.FieldNo("Salesperson Code"):
-                begin
-                    Row += 1;
-                    Rec.SetFILTER("Salesperson Code", '%1', Destinatario.Valor);
-                    EnterCell(TempExcelBuffer, Row, 1, Rec.FieldCaption("Salesperson Code"), true, false, '', TempExcelBuffer."Cell Type"::Text);
-                    EnterCell(TempExcelBuffer, Row, 2, Destinatario.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                FieldRef := RecReftemp.Field(Filtros.Campo);
+                if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
+                    FieldRef.SetRange(DesdeFecha, HastaFecha);
+                    EnterCell(TempExcelBuffer, Row, 1, FieldRef.Caption, true, false, '', TempExcelBuffer."Cell Type"::Text);
+                    if DesdeFecha <> 0D then
+                        EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
+                    EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
+                end else begin
+                    FieldRef.SetFilter(Filtros.Valor);
+                    EnterCell(TempExcelBuffer, Row, 1, FieldRef.Caption, true, false, '', TempExcelBuffer."Cell Type"::Text);
+                    EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
                 end;
-        end;
+            until Filtros.Next() = 0;
+        Row += 1;
+        FieldRef := RecReftemp.Field(Destinatario."Campo Destinatario");
+        FieldRef.SetFilter(Destinatario.Valor);
         Row += 1;
 
 
 
-        // TempExcelBuffer.AddColumn(Rec.FieldCaption("No."), false, '', false, false, false, '', TempExcelBuffer."Cell Type"::Text);
-        // TempExcelBuffer.AddColumn(Rec.FieldCaption(Description), false, '', false, false, false, '', TempExcelBuffer."Cell Type"::Text);
-        //var ExcelBuffer: Record "Excel Buffer"; RowNo: Integer; ColumnNo: Integer; Value: Variant; IsBold: Boolean; IsItalics: Boolean; IsUnderline: Boolean)
-        //Crear estos títulos: Nº Contrato	Cliente	Nombre	Importe	Descripción	Agente	Comentario	Inicio	Fin
         Campos.SetRange(Id, Informes.Id);
+        Campos.SetRange(Include, true);
         if Campos.FindSet() then
             repeat
 
@@ -199,139 +84,240 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
             until Campos.Next() = 0;
 
+        "Periodos".SetRange(Id, Informes.Id);
+        If not "Periodos".FindFirst() then begin
+            "Periodos".Init();
+            "Periodos".Id := Informes.Id;
+            Periodos.Periodo := 'Ninguno';
+        end;
+        REPEAT
+            If Periodos.Campo2 <> 0 then begin
+                iF Periodos.Semana2 then begin
 
 
-        if Rec.FindSet() then
-            repeat
-                if Informes."Crear Tarea" then
-                    CreateTaskFromSalesHeader(Rec, Rec."Empresa del Cliente", FechaTarea, Informes."Descripcion Tarea");
-                Row += 1;
-                //
-                TotalesDocumentos(Rec."Nº Proyecto", Rec."Nº Contrato", Rec."Empresa del Cliente");
-                if Campos.FindSet() then
-                    repeat
+                    HastaFecha := CalcDate(Format(Periodos.Hasta2) + '+' + Format(Control.Semana(WorkDate())) + 'S', WorkDate());
+                    If Periodos.Desde2 <> DF then DesdeFecha := CalcDate(Format(Periodos.Desde2) + '+' + Format(Control.Semana(WorkDate())) + 'S', WorkDate());
+                    FieldRef := RecReftemp.Field(Periodos.Campo2);
+                    if (Periodos.Desde2 <> DF) or (Periodos.Hasta2 <> DF) then begin
+                        FieldRef.SetRange(DesdeFecha, HastaFecha);
+                    end;
+                end else begin
+                    If Periodos.Desde2 <> DF then DesdeFecha := CalcDate(Periodos.Desde2, WorkDate()) else DesdeFecha := 0D;
+                    If Periodos.Hasta2 <> DF then HastaFecha := CalcDate(Periodos.Hasta2, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                    FieldRef := RecReftemp.Field(Periodos.Campo2);
+                    if (Periodos.Desde2 <> DF) or (Periodos.Hasta2 <> DF) then begin
+                        FieldRef.SetRange(DesdeFecha, HastaFecha);
+                    end;
+                end;
+            end;
+            iF Periodos.Semana then begin
 
-                        rf := "Analysis Rounding Factor"::None;
-                        If Campos.Campo <> 0 then begin
-                            FieldRef := RecRef.Field(Campos.Campo);
-                            FieldT := FieldRef.Type;
-                            Id := Rec.RecordId;
-                            Valor := DevuelveValorCampo(Id, Campos.Campo);
-                        end else begin
-                            FieldT := FieldType::Text;
-                            //Importe,Vendedor,GetTotImp,ImporteIva,GetImpBorFac,GetImpBorAbo,GetImpFac,GetImpAbo,GetTotCont
-                            case Campos.Funcion of
-                                Funciones::Importe:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := Importe(Rec."Nº Contrato", Rec."Empresa del Cliente");
-                                    end;
-                                Funciones::ImporteIva:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := ImporteIva(Rec."Nº Contrato", Rec."Empresa del Cliente");
 
-                                    end;
-                                Funciones::Vendedor:
-                                    begin
-                                        FieldT := FieldType::Text;
-                                        Valor := Vendedor(Rec."Salesperson Code");
-                                    end;
-                                Funciones::GetTotImp:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := GetTotImp();
+                HastaFecha := CalcDate(Format(Periodos.Hasta) + '+' + Format(Control.Semana(WorkDate())) + 'S', WorkDate());
+                If Periodos.Desde <> DF then DesdeFecha := CalcDate(Format(Periodos.Desde) + '+' + Format(Control.Semana(WorkDate())) + 'S', WorkDate());
+                FieldRef := RecReftemp.Field(Periodos.Campo);
+                if (Periodos.Desde <> DF) or (Periodos.Hasta <> DF) then begin
+                    FieldRef.SetRange(DesdeFecha, HastaFecha);
+                end;
+            end else begin
+                If Periodos.Desde <> DF then DesdeFecha := CalcDate(Periodos.Desde, WorkDate()) else DesdeFecha := 0D;
+                If Periodos.Hasta <> DF then HastaFecha := CalcDate(Periodos.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                FieldRef := RecReftemp.Field(Periodos.Campo);
+                if (Periodos.Desde <> DF) or (Periodos.Hasta <> DF) then begin
+                    FieldRef.SetRange(DesdeFecha, HastaFecha);
+                end;
+            end;
 
-                                    end;
-                                Funciones::GetImpBorFac:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := GetImpBorFac();
-                                    end;
-                                Funciones::GetImpBorAbo:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := GetImpBorAbo();
-                                    end;
-                                Funciones::GetImpFac:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := GetImpFac();
-                                    end;
-                                Funciones::GetImpAbo:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := GetImpAbo();
-                                    end;
-                                Funciones::GetTotCont:
-                                    begin
-                                        FieldT := FieldType::Decimal;
-                                        Valor := GetTotCont();
-                                    end;
-                                else
-                                    Valor := '';
-                            end;
+            procesar(true, DesdeFecha, HastaFecha);
+
+
+
+
+            If Rec.FindFirst() then
+                repeat
+                    RecRef.GetTable(Rec);
+                    for Campo := 1 to RecRef.FieldCount do begin
+                        If RecRef.FieldIndex(campo).Active then begin
+                            FieldRef := RecRef.FieldIndex(Campo);
+                            RecRefTemp.Fieldindex(Campo).Value := FieldRef.Value;
+
                         end;
-                        Case FieldT of
-                            FieldT::Date:
-                                begin
-                                    if Valor.IsDate then Fecha := Valor else Fecha := 0D;
-                                    iF Fecha <> 0D then
-                                        EnterCell(TempExcelBuffer, Row, Campos.Orden, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Fecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Date)
+                        //Campo += 1
+                    end;
+                    RecReftemp.Insert();
+                until Rec.Next() = 0;
+
+
+            if RecReftemp.FindSet() then
+                repeat
+                    if Informes."Crear Tarea" then
+                        CreateTaskFromSalesHeader(RecrefTemp.Field(Rec.FieldNo(Rec."Nº Contrato")).Value
+                            , RecrefTemp.Field(Rec.FieldNo(Rec."Sell-to Contact No.")).Value
+                            , RecrefTemp.Field(Rec.FieldNo(Rec."Salesperson Code")).Value
+                            , RecrefTemp.Field(Rec.FieldNo(Rec."Opportunity No.")).Value
+                            , RecrefTemp.Field(Rec.FieldNo(Rec."Campaign No.")).Value
+                            , RecrefTemp.Field(Rec.FieldNo(Rec."Empresa del Cliente")).Value
+                            , FechaTarea, Informes."Descripcion Tarea");
+                    Row += 1;
+                    //
+                    TotalesDocumentos(RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value,
+                     RecrefTemp.Field(Rec.FieldNo("Nº Contrato")).Value, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+
+                    if Campos.FindSet() then
+                        repeat
+
+                            rf := "Analysis Rounding Factor"::None;
+                            If (Campos.Campo <> 0) and (Campos.Funcion = Campos.Funcion::" ") then begin
+                                FieldRef := RecRef.Field(Campos.Campo);
+                                FieldT := FieldRef.Type;
+                                Valor := DevuelveCampo(Campos.Campo);
+                            end else begin
+                                FieldT := FieldType::Text;
+                                //Importe,Vendedor,GetTotImp,ImporteIva,GetImpBorFac,GetImpBorAbo,GetImpFac,GetImpAbo,GetTotCont
+                                case Campos.Funcion of
+                                    Funciones::Importe:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := Importe(RecrefTemp.Field(Rec.FieldNo("Nº Contrato")).Value, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                        end;
+                                    Funciones::ImporteIva:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := ImporteIva(RecrefTemp.Field(Rec.FieldNo("Nº Contrato")).Value, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+
+                                        end;
+                                    Funciones::Vendedor:
+                                        begin
+                                            FieldT := FieldType::Text;
+                                            Valor := Vendedor(RecrefTemp.Field(Rec.FieldNo("Salesperson Code")).Value, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                        end;
+                                    Funciones::GetTotImp:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetTotImp();
+
+                                        end;
+                                    Funciones::GetImpBorFac:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetImpBorFac();
+                                        end;
+                                    Funciones::GetImpBorAbo:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetImpBorAbo();
+                                        end;
+                                    Funciones::GetImpFac:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetImpFac();
+                                        end;
+                                    Funciones::GetImpAbo:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetImpAbo();
+                                        end;
+                                    Funciones::GetTotCont:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetTotCont();
+                                        end;
+                                    funciones::Diferencia:
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            Valor := GetDiferencia();
+                                        end;
+                                    Funciones::"Año":
+                                        begin
+                                            FieldT := FieldType::Integer;
+                                            Valor := Date2DMY(RecrefTemp.Field(Campos.Campo).Value, 3);
+
+                                        end;
+                                    Funciones::"Mes":
+                                        begin
+                                            FieldT := FieldType::Integer;
+                                            Valor := Date2DMY(RecrefTemp.Field(Campos.Campo).Value, 2);
+                                        end;
+                                    Funciones::"Semana":
+                                        begin
+                                            FieldT := FieldType::Integer;
+                                            Valor := Control.Semana(RecrefTemp.Field(Campos.Campo).Value);
+                                        end;
                                     else
-                                        EnterCell(TempExcelBuffer, Row, Campos.Orden, '', false, false, '', TempExcelBuffer."Cell Type"::Text);
-                                END;
-                            FieldT::Time:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Time);
-                            FieldT::Integer:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Number);
-                            FieldT::Decimal:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
-                            FieldT::Option:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            FieldT::Code:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            FieldT::Text:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            FieldT::Boolean:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            FieldT::RecordId:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            FieldT::Blob:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
-                            FieldT::Guid:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                        Valor := '';
+                                end;
+                            end;
+                            Case FieldT of
+                                FieldT::Date:
+                                    begin
+                                        if Valor.IsDate then Fecha := Valor else Fecha := 0D;
+                                        iF Fecha <> 0D then
+                                            EnterCell(TempExcelBuffer, Row, Campos.Orden, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Fecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Date)
+                                        else
+                                            EnterCell(TempExcelBuffer, Row, Campos.Orden, '', false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    END;
+                                FieldT::Time:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Time);
+                                FieldT::Integer:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Number);
+                                FieldT::Decimal:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
+                                FieldT::Option:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                FieldT::Code:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                FieldT::Text:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                FieldT::Boolean:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                FieldT::RecordId:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                FieldT::Blob:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                FieldT::Guid:
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
 
-                        End;
-
-
-                    until Campos.Next() = 0;
-            // EnterCell(TempExcelBuffer, Row, 1, Rec."Nº Contrato", false, false, '', TempExcelBuffer."Cell Type"::Text);
-            // EnterCell(TempExcelBuffer, Row, 2, Rec."Sell-to Customer No.", false, false, '', TempExcelBuffer."Cell Type"::Text);
-            // EnterCell(TempExcelBuffer, Row, 3, Rec."Sell-to Customer Name", false, false, '', TempExcelBuffer."Cell Type"::Text);
-            // //FormatAmount(Value: Decimal; RoundingFactor: Enum "Analysis Rounding Factor"; AddCurrency: Boolean)
-
-            // EnterCell(TempExcelBuffer, Row, 4, Matrix.FormatAmount(Importe(Rec."Nº Contrato", Rec."Empresa del Cliente"), Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
-            // EnterCell(TempExcelBuffer, Row, 5, Rec."Posting Description", false, false, '', TempExcelBuffer."Cell Type"::Text);
-            // EnterCell(TempExcelBuffer, Row, 6, Vendedor(Rec."Salesperson Code"), false, false, '', TempExcelBuffer."Cell Type"::Text);
-            // EnterCell(TempExcelBuffer, Row, 7, Rec."Comentario Cabecera", false, false, '', TempExcelBuffer."Cell Type"::Text);
-            // EnterCell(TempExcelBuffer, Row, 8, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Rec."Fecha inicial proyecto"), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Date);
-            // EnterCell(TempExcelBuffer, Row, 9, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Rec."Fecha fin proyecto"), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Date);
+                            End;
 
 
-            until Rec.Next() = 0;
-        if Informes."Crear Tarea" then Rec.ModifyAll("Ofrecida ampliación", true);
+                        until Campos.Next() = 0;
+
+                    Contrato.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                    NoContrato := RecrefTemp.Field(Rec.FieldNo("Nº Contrato")).Value;
+                    Contrato.Get(Contrato."Document Type"::Order, NoContrato);
+                    Contrato."Ofrecida ampliación" := true;
+                    if Informes."Crear Tarea" then Contrato.Modify;
+                //end;
+                until RecrefTemp.Next() = 0;
+            //RecReftemp.Close();
+            RecReftemp.DeleteAll();
+        until Periodos.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
         if Informes."Plantilla Excel".HasValue then begin
             Informes."Plantilla Excel".CreateInStream(InExcelStream);
             TempExcelBuffer.UpdateBookStream(InExcelStream, ContratosLblEP, true);
 
         end else
-            TempExcelBuffer.CreateNewBook(ContratosLblEP);
+            TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
         TempExcelBuffer.WriteSheet(ContratosLblEP, CompanyName, UserId);
         TempExcelBuffer.CloseBook();
         TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, CurrentDateTime, UserId));
         TempExcelBuffer.SaveToStream(ExcelStream, true);
+        RecReftemp.Close();
+    end;
+
+    Procedure DevuelveCampo(Campo: Integer) Valor: Variant
+    var
+        MyFieldRef: FieldRef;
+    begin
+
+
+        MyFieldRef := RecRefTemp.Field(Campo);
+        If MyFieldRef.Type = FieldType::Option Then begin
+            Exit(MyFieldRef.GetEnumValueNameFromOrdinalValue(MyFieldRef.Value));
+        end;
+
+        Exit(MyFieldRef.Value);
     end;
 
     local procedure EnterCell(
@@ -356,7 +342,15 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         TempExcelBuf.Insert();
     end;
 
-    procedure CreateTaskFromSalesHeader(SalesHeader: Record "Sales Header"; Empresa: Text; Fecha: Date; Descripcion: Text[250])
+    procedure CreateTaskFromSalesHeader(
+        NoContrato: Code[20];
+        ContactNo: Code[20];
+        SalespersonCode: Code[20];
+        OportunityNo: Code[20];
+        CampaingNo: Code[20];
+        Empresa: Text;
+        Fecha: Date;
+        Descripcion: Text[250])
     var
         "To-do": Record "To-do";
         Cont: Record Contact;
@@ -367,8 +361,10 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         Contrato: Record "Sales Header";
     begin
         "To-do".ChangeCompany(Empresa);
+        if "to-do".Get(NoContrato) then
+            exit;
         "To-do".Init();
-        "To-do"."Contact No." := SalesHeader."Sell-to Contact No.";
+        "To-do"."Contact No." := ContactNo;
 
         Cont.ChangeCompany(Empresa);
         if Cont.Get("To-do"."Contact No.") then
@@ -389,20 +385,20 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         end;
 
 
-        "To-do".SetRange("Contact No.", SalesHeader."Sell-to Contact No.");
-        if SalesHeader."Salesperson Code" <> '' then begin
-            "To-do"."Salesperson Code" := SalesHeader."Salesperson Code";
+        "To-do".SetRange("Contact No.", ContactNo);
+        if SalespersonCode <> '' then begin
+            "To-do"."Salesperson Code" := SalespersonCode;
 
         end;
-        if SalesHeader."Campaign No." <> '' then begin
-            "To-do"."Campaign No." := SalesHeader."Campaign No.";
+        if CampaingNo <> '' then begin
+            "To-do"."Campaign No." := CampaingNo;
 
         end;
-        "To-do".Description := Descripcion +' '+ SalesHeader."Nº Contrato";
-        "To-do"."Descripción Visita" := Descripcion+' ' + SalesHeader."Nº Contrato";
-        "To-do"."Salesperson Code" := SalesHeader."Salesperson Code";
-        "To-do"."Campaign No." := SalesHeader."Campaign No.";
-        "To-do"."Opportunity No." := SalesHeader."Opportunity No.";
+        "To-do".Description := Descripcion + ' ' + NoContrato;
+        "To-do"."Descripción Visita" := Descripcion + ' ' + NoContrato;
+        "To-do"."Salesperson Code" := SalespersonCode;
+        "To-do"."Campaign No." := CampaingNo;
+        "To-do"."Opportunity No." := OportunityNo;
         "To-do"."Segment No." := '';
         "To-do".Type := "To-do".Type::Meeting;
         "To-do"."Date" := Fecha;
@@ -428,7 +424,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         "To-do"."Last Date Modified" := Today;
         "To-do"."Last Time Modified" := Time;
         // hata que no se insertre, voy incrementando el contador
-        "To-do"."No." := SalesHeader."Nº Contrato";
+        "To-do"."No." := NoContrato;
         "To-do"."Organizer To-do No." := "To-do"."No.";
         "To-do".Insert;
 
@@ -436,6 +432,8 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
     end;
 
+    var
+        RecReftemp: RecordRef;
 
 
 }
