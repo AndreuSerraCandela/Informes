@@ -17,7 +17,7 @@ Codeunit 7001130 ControlInformes
         Contratos: Page "Lista Contratos x Empresa";
         Conta: Page "MovContabilidad";
         Out: OutStream;
-        ficheros: Record Ficheros;
+        ficheros: Record Ficheros temporary;
         Secuencia: Integer;
         MillisecondsToAdd: Integer;
         NoOfMinutes: Integer;
@@ -30,9 +30,15 @@ Codeunit 7001130 ControlInformes
             Informe.SetRange("ID", IdInforme);
         If ProximaFecha <> 0DT tHEN
             Informe.SetRange("Earliest Start Date/Time", CurrentDateTime - MillisecondsToAdd, CurrentDateTime + MillisecondsToAdd);
-        If Informe.FindFirst() then begin
+        Informe.SetRange(Ejecutandose, false);
+
+        If Informe.FindSet() then begin
             repeat
+                Informe.Ejecutandose := true;
+                Informe.Modify();
+                Commit();
                 Destinatario.Reset;
+                Destinatario.SetRange("No enviar", false);
                 Destinatario.SetRange("ID", Informe."ID");
                 if Destinatario.FindSet() then begin
                     repeat
@@ -67,8 +73,9 @@ Codeunit 7001130 ControlInformes
                                 end;
                             Informes::"Web Service":
                                 begin
+
                                     if ExportExcelWeb(Filtros, Destinatario, out) = 'Retry' then begin
-                                        RecReftemp.Close();
+                                        //RecReftemp.Close();
                                         ExportExcelWeb(Filtros, Destinatario, out);
                                     end;
 
@@ -88,8 +95,11 @@ Codeunit 7001130 ControlInformes
                 end;
                 IF ProximaFecha <> 0DT tHEN begin
                     Informe."Earliest Start Date/Time" := Informe.CalcNextRunTimeForRecurringReport(Informe, Informe."Earliest Start Date/Time");
-                    Informe.Modify;
+
+
                 end;
+                Informe.Ejecutandose := false;
+                Informe.Modify;
 
             until Informe.Next() = 0;
         end;
@@ -121,9 +131,12 @@ Codeunit 7001130 ControlInformes
         //(FORMAT(cr,0,'<CHAR>') + FORMAT(lf,0,'<CHAR>')
         BigText := BigText + '<br> </br>';
         BigText := BigText + '<br> </br>';
-        BigText := BigText + 'Adjuntamos el Informe: ' + Informe;
         Informes.get(IdInforme);
         workdescription := Informes.GetDescripcionAmpliada();
+        if workdescription = '' then
+            BigText := BigText + 'Adjuntamos el Informe: ' + Informe;
+
+
         BigText := BigText + '<br> </br>';
         BigText := BigText + workdescription;
         //BigText:=('<br> </br>';
@@ -138,7 +151,7 @@ Codeunit 7001130 ControlInformes
         BigText := BigText + '<br> </br>';
         BigText := BigText + ('Atentamente');
         BigText := BigText + '<br> </br>';
-        BigText := BigText + ('Dpto. Medios');
+        BigText := BigText + ('Dpto. Tranformación digital');
         BigText := BigText + '<br> </br>';
 
         BigText := BigText + (rInf.Name);
@@ -178,7 +191,17 @@ Codeunit 7001130 ControlInformes
         //REmail.Subject := 'Pago contrato ' + NContrato;
         REmail.AddAttachment(Funciones.CargaPie(), 'emailfoot.png');
         REmail."Send to" := SalesPersonMail;
-        REmail."Send BCC" := 'andreuserra@malla.es';
+        if StrPos(SalesPersonMail, Informes.Bcc) <> 0 then
+            Informes.bcc := '';
+        If Informes.bcc <> '' then begin
+            if StrPos(SalesPersonMail, 'andreuserra@malla.es') = 0 then
+                REmail."Send BCC" := Informes.bcc + ';andreuserra@malla.es'
+            else
+                REmail."Send BCC" := Informes.bcc;
+        end else begin
+            if StrPos(SalesPersonMail, 'andreuserra@malla.es') = 0 then
+                REmail."Send BCC" := 'andreuserra@malla.es';
+        end;
         REmail.SetBodyText(BigText);
         REmail."From Name" := UserId;
 
@@ -190,7 +213,7 @@ Codeunit 7001130 ControlInformes
         // if REmail."From Address" <> '' Then
         //     REmail."Send BCC" := REmail."From Address" else
         //     REmail."Send BCC" := BCC();
-        REmail.Send(true, emilesc::Default);
+        REmail.Send(true, emilesc::Informes);
         ficheros.delete;
 
     end;
@@ -226,7 +249,7 @@ Codeunit 7001130 ControlInformes
         Contacto: Code[20];
         Vendedor: Code[20];
         ExcelFileNameEPR: Text;//Label '%1_%2_%3';
-
+        RecrefTemp: RecordRef;
 
     begin
 
@@ -307,7 +330,7 @@ Codeunit 7001130 ControlInformes
                         If Campos.Campo <> 0 then begin
                             FieldRef := RecReftemp.Field(Campos.Campo);
                             FieldT := FieldRef.Type;
-                            Valor := DevuelveCampo(Campos.Campo);
+                            Valor := DevuelveCampo(Campos.Campo, RecrefTemp);
                         end else begin
                             FieldT := FieldType::Text;
                             //Importe,Vendedor,GetTotImp,ImporteIva,GetImpBorFac,GetImpBorAbo,GetImpFac,GetImpAbo,GetTotCont
@@ -400,6 +423,7 @@ Codeunit 7001130 ControlInformes
 
             //end;
             until RecrefTemp.Next() = 0;
+        RecrefTemp.Close();
         Informes.CalcFields("Plantilla Excel");
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
         if Destinatario."Nombre Informe" <> '' then
@@ -475,6 +499,7 @@ Codeunit 7001130 ControlInformes
         Fila: Integer;
         DateValue: Date;
         Primeravez: Boolean;
+        RecReftemp: RecordRef;
     begin
 
         TempExcelBuffer.Reset();
@@ -487,11 +512,12 @@ Codeunit 7001130 ControlInformes
         Campos.SetFilter(Table, '<>%1', 0);
 
         Campos.FindFirst();
+        RecReftemp.Close();
         RecReftemp.Open(Campos.Table);
         Campos.SetRange(Table);
         Campos.ModifyAll(Table, RecReftemp.Number);
         If not Empresas.FindSet() then
-            CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId)
+            CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId, RecReftemp)
         else begin
             If Filtros.FindSet() then
                 repeat
@@ -516,7 +542,7 @@ Codeunit 7001130 ControlInformes
         end;
         if Empresas.FindSet() then
             if not Empresas."Hojas Separadas" then
-                CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId)
+                CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId, RecReftemp)
             else begin
                 If Filtros.FindSet() then
                     repeat
@@ -602,7 +628,7 @@ Codeunit 7001130 ControlInformes
             if HojasSeparadas then begin
 
                 Row := 0;
-                CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId);
+                CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId, RecReftemp);
                 Empresas.TestField("HojaExcel");
             end;
             Periodos.SetRange(Id, Informes.Id);
@@ -790,7 +816,7 @@ Codeunit 7001130 ControlInformes
         exit('OK');
     end;
 
-    Procedure DevuelveCampo(Campo: Integer) Valor: Variant
+    Procedure DevuelveCampo(Campo: Integer; var RecRefTemp: RecordRef) Valor: Variant
     var
         MyFieldRef: FieldRef;
     begin
@@ -1060,7 +1086,7 @@ Codeunit 7001130 ControlInformes
         exit(Input);
     end;
 
-    local procedure CrearCabecera(idInformes: Integer; var TempExcelBuffer: Record "Excel Buffer" temporary; var Row: Integer; DesdeFecha: Date; HastaFecha: Date; var FieldRef: FieldRef; TenantRecorId: RecordId)
+    local procedure CrearCabecera(idInformes: Integer; var TempExcelBuffer: Record "Excel Buffer" temporary; var Row: Integer; DesdeFecha: Date; HastaFecha: Date; var FieldRef: FieldRef; TenantRecorId: RecordId; var RecRefTemp: RecordRef)
     var
         DF: DateFormula;
         Destinatario: Record "Destinatarios Informes";
@@ -1242,10 +1268,9 @@ Codeunit 7001130 ControlInformes
     end;
 
     var
-        RecReftemp: RecordRef;
+
         Fecha: date;
         TextValue: Text;
-
         Client: HttpClient;
         RequestHeaders: HttpHeaders;
         RequestContent: HttpContent;
