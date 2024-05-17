@@ -38,6 +38,10 @@ page 7001196 "Destinatarios Informes"
                 {
 
                 }
+                field("No enviar"; Rec."No enviar")
+                {
+                    ApplicationArea = All;
+                }
 
             }
         }

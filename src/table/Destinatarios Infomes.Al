@@ -65,6 +65,11 @@ table 7001241 "Destinatarios Informes"
             caption = 'Nombre Informe';
             DataClassification = ToBeClassified;
         }
+        field(7; "No enviar"; Boolean)
+        {
+            caption = 'No enviar';
+            DataClassification = ToBeClassified;
+        }
 
 
 

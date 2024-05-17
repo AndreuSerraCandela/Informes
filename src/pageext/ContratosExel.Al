@@ -144,7 +144,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                         end;
                         //Campo += 1
                     end;
-                    RecReftemp.Insert();
+                    If RecReftemp.Insert() then;
                 until Rec.Next() = 0;
 
 
@@ -230,18 +230,30 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                     Funciones::"Año":
                                         begin
                                             FieldT := FieldType::Integer;
-                                            Valor := Date2DMY(RecrefTemp.Field(Campos.Campo).Value, 3);
+                                            Fecha := RecrefTemp.Field(Campos.Campo).Value;
+                                            If fecha <> 0D then
+                                                Valor := Date2DMY(RecrefTemp.Field(Campos.Campo).Value, 3)
+                                            else
+                                                valor := '';
 
                                         end;
                                     Funciones::"Mes":
                                         begin
                                             FieldT := FieldType::Integer;
-                                            Valor := Date2DMY(RecrefTemp.Field(Campos.Campo).Value, 2);
+                                            Fecha := RecrefTemp.Field(Campos.Campo).Value;
+                                            If fecha <> 0D then
+                                                Valor := Date2DMY(RecrefTemp.Field(Campos.Campo).Value, 2)
+                                            else
+                                                valor := '';
                                         end;
                                     Funciones::"Semana":
                                         begin
                                             FieldT := FieldType::Integer;
-                                            Valor := Control.Semana(RecrefTemp.Field(Campos.Campo).Value);
+                                            Fecha := RecrefTemp.Field(Campos.Campo).Value;
+                                            If fecha <> 0D then
+                                                Valor := Control.Semana(RecrefTemp.Field(Campos.Campo).Value)
+                                            else
+                                                valor := '';
                                         end;
                                     else
                                         Valor := '';

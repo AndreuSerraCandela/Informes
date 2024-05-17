@@ -25,3 +25,12 @@ enum 7001191 Funciones
     value(14; "Diferencia") { Caption = 'Diferencia'; }
 
 }
+enumextension 90144 EnumEscenarioInformes extends "Email Scenario"
+{
+    value(90003; Informes)
+    {
+        Caption = 'Informes';
+    }
+
+
+}

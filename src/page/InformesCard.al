@@ -34,6 +34,10 @@ page 7001195 "Informes Card"
                         end;
                     }
                 }
+                field(Bcc; Rec.Bcc)
+                {
+                    ApplicationArea = All;
+                }
                 group(Recurrencia)
                 {
                     field("Fecha/Hora Inicio"; Rec."Earliest Start Date/Time")
@@ -247,8 +251,8 @@ page 7001195 "Informes Card"
             action(Print)
             {
                 ApplicationArea = All;
-                Image = Print;
-                Caption = 'Imprimir';
+                Image = SendToMultiple;
+                Caption = 'Enviar';
                 trigger OnAction()
                 var
                     Informes: Codeunit ControlInformes;
@@ -311,7 +315,8 @@ page 7001195 "Informes Card"
         }
         area(Promoted)
         {
-            actionref(Imprimir; Print) { }
+            actionref(Enviar_ref; Print) { }
+            actionref(Guardar_ref; Guardar) { }
             actionref(Importar; "Importar Plantilla") { }
             actionref("Crea_ref"; "Crear un Nuevo Informe") { }
         }

@@ -253,6 +253,15 @@ table 7001240 Informes
         {
 
         }
+        field(29; Bcc; Text[250])
+        {
+            Caption = 'CCO';
+            DataClassification = ToBeClassified;
+        }
+        field(30; Ejecutandose; Boolean)
+        {
+
+        }
 
 
     }
