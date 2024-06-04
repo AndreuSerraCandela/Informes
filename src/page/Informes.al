@@ -20,7 +20,26 @@ page 7001198 "Informes"
                 {
                     ApplicationArea = All;
                 }
-
+                // field("Date Formula"; DTF)
+                // {
+                //     ApplicationArea = All;
+                //     trigger OnValidate()
+                //     begin
+                //         CalcularDate();
+                //     end;
+                // }
+                // field(Fecha; FechaFormula)
+                // {
+                //     ApplicationArea = All;
+                //     trigger OnValidate()
+                //     begin
+                //         CalcularDate();
+                //     end;
+                // }
+                // field(Resultado; Resultado)
+                // {
+                //     ApplicationArea = All;
+                // }
 
 
                 field("Fecha/Hora Inicio"; Rec."Earliest Start Date/Time")
@@ -212,4 +231,17 @@ page 7001198 "Informes"
 
         "Nombre Query": Text;
         OtrosInformes: Boolean;
+        DTF: DateFormula;
+        DT: DateFormula;
+        FechaFormula: Date;
+        Resultado: Date;
+
+    procedure CalcularDate()
+    begin
+        if DTF <> DT then begin
+            If FechaFormula <> 0D then
+                Resultado := CalcDate(DTF, FechaFormula);
+            CurrPage.UPDATE(false);
+        end;
+    end;
 }

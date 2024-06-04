@@ -22,7 +22,6 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                     DetMovPro: Record "Detailed Vendor Ledg. Entry";
                     rMovPro: Record "Vendor Ledger Entry";
                     ExcelStream: OutStream;
-
                     Secuencia: Integer;
                     ficheros: Record Ficheros;
                     Intstream: Instream;
@@ -33,7 +32,7 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                     SaldoPro: Decimal;
                 BEGIN
                     RxE.SETRANGE(RxE."Código Intercambio", Rec."No.");
-                    EnterCell(1, 1, COMPANYNAME, true, FALSE, TRUE);
+                    EnterCell(1, 1, COMPANYNAME, true, FALSE, false);
                     EnterCell(
                         2,
                         1,
@@ -52,7 +51,7 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                         4,
                         1,
                         'Según nuestro acuerdo de intercambio. a fecha de hoy, hemos compensado',
-                        TRUE,
+                        false,
                         FALSE,
                         FALSE);
                     EnterCell(
@@ -77,9 +76,9 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                    RowNo + 9,
                                    1,
                                    'Facturas emitidas por ' + rEmp.Name + ' a ' + Rec.Name,
-                                   TRUE,
                                    false,
-                                   True);
+                                   false,
+                                   false);
                                 EnterCell(
                                     RowNo + 12,
                                     1,
@@ -174,9 +173,11 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                         FALSE,
                                         FALSE,
                                         FALSE);
+                                    DetMovCli.Reset();
                                     DetMovCli.ChangeCompany(RxE.Empresa);
+                                    DetMovCli.SetRange(DetMovCli."Entry Type");
                                     DetMovCli.SETRANGE("Cust. Ledger Entry No.", rMovCli."Entry No.");
-                                    DetMovCli.SetRange("Ledger Entry Amount", true);
+                                    DetMovCli.SetRange("Ledger Entry Amount");
                                     DetMovCli.CalcSums("Amount (LCY)");
                                     EnterCell(
                                         RowNo + 1,
@@ -196,10 +197,17 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                 until rMovCli.NEXT = 0;
                                 RowNo += 1;
                                 EnterCell(
+                                   RowNo + 1,
+                                   4,
+                                   'Subtotal:',
+                                   true,
+                                   FALSE,
+                                   FALSE);
+                                EnterCell(
                                     RowNo + 1,
                                     5,
                                     Format(SaldoLinea, 0),
-                                    FALSE,
+                                    true,
                                     FALSE,
                                     FALSE);
                                 SaldoCli += SaldoLinea;
@@ -215,9 +223,9 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                    RowNo + 9,
                                    1,
                                    'Facturas emitidas por ' + Rec.Name + ' a ' + rEmp.Name,
-                                   TRUE,
                                    false,
-                                   True);
+                                   false,
+                                   false);
                                 EnterCell(
                                     RowNo + 12,
                                     1,
@@ -313,8 +321,9 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                         FALSE,
                                         FALSE);
                                     DetMovPro.ChangeCompany(RxE.Empresa);
+                                    DetMovPro.SetRange(DetMovPro."Entry Type");
                                     DetMovPro.SETRANGE("Vendor Ledger Entry No.", rMovPro."Entry No.");
-                                    DetMovPro.SetRange("Ledger Entry Amount", true);
+                                    DetMovPro.SetRange("Ledger Entry Amount");
                                     DetMovPro.CalcSums("Amount (LCY)");
                                     EnterCell(
                                         RowNo + 1,
@@ -335,9 +344,16 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                 RowNo += 1;
                                 EnterCell(
                                     RowNo + 1,
+                                    4,
+                                    'Subtotal:',
+                                    true,
+                                    FALSE,
+                                    FALSE);
+                                EnterCell(
+                                    RowNo + 1,
                                     5,
                                     Format(SaldoLinea, 0),
-                                    FALSE,
+                                    true,
                                     FALSE,
                                     FALSE);
                                 SaldoPro += SaldoLinea;
@@ -383,7 +399,7 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                     ficheros.CalcFields(Fichero);
                     ficheros.Fichero.CreateOutStream(ExcelStream);
                     TempExcelBuffer.CreateNewBook('Intercambio');
-                    TempExcelBuffer.WriteSheet('Intercambio', CompanyName, UserId);
+                    TempExcelBuffer.WriteSheet('', '', '');
                     TempExcelBuffer.CloseBook();
                     TempExcelBuffer.SetFriendlyFilename('Intercambio');
                     TempExcelBuffer.SaveToStream(ExcelStream, true);
