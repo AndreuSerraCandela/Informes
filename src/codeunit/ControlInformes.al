@@ -748,6 +748,14 @@ Codeunit 7001130 ControlInformes
                                                 Evaluate(DateValue, DevuelveCampo(Campos."Field Name", JsonObj, Fieldt));
                                                 TextValue := Format(Semana(DateValue));
                                             end;
+                                        Campos.Funcion::Vendedor:
+                                            begin
+
+                                                FieldT := FieldType::Text;
+                                                TextValue := DevuelveCampo(Campos."Field Name", JsonObj, Fieldt);
+                                                TextValue := Comercial(Empresas.Empresa, TextValue);
+
+                                            end;
                                     End;
 
                                 end;
@@ -1351,5 +1359,24 @@ Codeunit 7001130 ControlInformes
         if rFecha.FIND('-') THEN
             Exit(rFecha."Period No.");
     end;
+
+    Procedure Comercial(Empresa: Text; EntryNo: Text): Text
+    var
+        R21: Record 21;
+        r18: Record 18;
+        r13: Record 13;
+        a: Integer;
+    begin
+        if not Evaluate(a, EntryNo) then
+            exit('');
+        r13.ChangeCompany(Empresa);
+
+        r21.CHANGECOMPANY(Empresa);
+        if r21.GET(EntryNo) THEN BEGIN
+            if r13.GET(r21."Salesperson Code") THEN EXIT(r13.Name);
+        END;
+
+    end;
+
 
 }

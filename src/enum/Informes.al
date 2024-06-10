@@ -23,6 +23,7 @@ enum 7001191 Funciones
     value(12; "Mes") { Caption = 'Mes'; }
     value(13; "Semana") { Caption = 'Semana'; }
     value(14; "Diferencia") { Caption = 'Diferencia'; }
+    value(15; "GetTotContNew") { Caption = 'Total Contrato o Total Facturado'; }
 
 }
 enumextension 90144 EnumEscenarioInformes extends "Email Scenario"

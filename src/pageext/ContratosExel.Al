@@ -220,6 +220,11 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                     Funciones::GetTotCont:
                                         begin
                                             FieldT := FieldType::Decimal;
+                                            Valor := GetTotCont2();
+                                        end;
+                                    Funciones::GetTotContNew:
+                                        begin
+                                            FieldT := FieldType::Decimal;
                                             Valor := GetTotCont(RecrefTemp.Field(Rec.FieldNo("Estado")).Value, RecrefTemp.Field(Rec.FieldNo("Fecha Inicial Proyecto")).Value,
                                             RecrefTemp.Field(Rec.FieldNo("Posting Date")).Value);
                                         end;
