@@ -204,6 +204,7 @@ Codeunit 7001130 ControlInformes
         end;
         REmail.SetBodyText(BigText);
         REmail."From Name" := UserId;
+        REmail.Subject := Informe;
 
 
         ficheros.CalcFields(Fichero);
@@ -681,8 +682,7 @@ Codeunit 7001130 ControlInformes
                     if Informes."Crear Tarea" then begin
                         Campos.SetRange(Id_Campo, Informes."Campo Tarea");
                         Campos.FindSet();
-                        FieldRef := RecReftemp.Field(Campos.Campo);
-                        FieldT := FieldRef.Type;
+
                         Tarea := DevuelveCampo(Campos."Field Name", JsonObj, FieldT);
                         Campos.SetFilter("Field Name", '%1', '*Contact No.');
                         If Campos.FindSet() Then begin
@@ -713,13 +713,20 @@ Codeunit 7001130 ControlInformes
 
                             rf := "Analysis Rounding Factor"::None;
                             If (Campos.Campo <> 0) and (Campos.Funcion = Campos.Funcion::" ") then begin
-                                FieldRef := RecReftemp.Field(Campos.Campo);
-                                FieldT := FieldRef.Type;
+                                if RecReftemp.FieldExist(Campos.Campo) then begin
+
+                                    FieldRef := RecReftemp.Field(Campos.Campo);
+                                    FieldT := FieldRef.Type;
+                                end else
+                                    FieldT := FieldType::Text;
                                 TextValue := DevuelveCampo(Campos."Field Name", JsonObj, Fieldt);
                             end else begin
                                 If Campos.Campo <> 0 Then begin
-                                    FieldRef := RecReftemp.Field(Campos.Campo);
-                                    FieldT := FieldRef.Type;
+                                    if RecReftemp.FieldExist(Campos.Campo) then begin
+                                        FieldRef := RecReftemp.Field(Campos.Campo);
+                                        FieldT := FieldRef.Type;
+                                    end else
+                                        FieldT := FieldType::Text;
                                     Case Campos.Funcion of
                                         Campos.Funcion::Cliente_Proveedor:
                                             begin

@@ -479,7 +479,7 @@ table 7001240 Informes
             NewRunDate := CalcDate(Informes.Periodicidad, DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
-        If (Informes."Run on Mondays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Mondays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 0;
@@ -496,12 +496,13 @@ table 7001240 Informes
                 7:
                     AdDay := -6;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         //Martes
-        If (Informes."Run on Tuesdays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Tuesdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 1;
@@ -518,12 +519,13 @@ table 7001240 Informes
                 7:
                     AdDay := -5;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         //Miercoles
-        If (Informes."Run on Wednesdays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Wednesdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 2;
@@ -540,12 +542,13 @@ table 7001240 Informes
                 7:
                     AdDay := -4;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         //Jueves
-        If (Informes."Run on Thursdays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Thursdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 3;
@@ -562,12 +565,13 @@ table 7001240 Informes
                 7:
                     AdDay := -3;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         //Viernes
-        If (Informes."Run on Fridays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Fridays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 4;
@@ -584,12 +588,13 @@ table 7001240 Informes
                 7:
                     AdDay := -2;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         //Sabado
-        If (Informes."Run on Saturdays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Saturdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 5;
@@ -606,12 +611,13 @@ table 7001240 Informes
                 7:
                     AdDay := -1;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         //Domingo
-        If (Informes."Run on Sundays") and ("No. of Minutes between Runs" = 0) then begin
+        If (Informes."Run on Sundays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
             Case Date2DWY(Today, 1) of
                 1:
                     AdDay := 6;
@@ -628,8 +634,9 @@ table 7001240 Informes
                 7:
                     AdDay := 0;
             end;
-
-            NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
+            if AdDay = 0 then
+                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
+                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
             exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
         end;
         if Informes."No. of Minutes between Runs" > 0 then
