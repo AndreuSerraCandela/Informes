@@ -5,7 +5,6 @@ table 7001242 "Filtros Informes"
     {
         field(1; Id; Integer)
         {
-            AutoIncrement = true;
             caption = 'Id';
             DataClassification = ToBeClassified;
         }
@@ -15,20 +14,23 @@ table 7001242 "Filtros Informes"
             trigger OnLookup()
             var
                 Informes: Record "Informes";
-                Campos: Record Field;
                 Columna: Record "Columnas Informes";
+                ColumnaTemp: Record "Columnas Informes" temporary;
             begin
                 if Informes.Get(Id) then begin
                     Columna.SetRange(Columna."Id", Informes."Id");
                     If not Columna.FindFirst() then begin
                         Informes.InitDefaultColumns();
                         Informes.GetColumns(Informes);
+
                         Commit();
                         Columna.FindFirst();
-                    end;
-                    Campos.SetRange(Campos.TableNo, Columna.Table);
-                    If Page.Runmodal(9806, Campos) = Action::LookupOK then
-                        Campo := Campos."No.";
+                    end else
+                        Informes.InitDefaultColumns();
+
+                    Informes.GetColumnsTemp(ColumnaTemp);
+                    If Page.Runmodal(Page::"Lista Columnas", ColumnaTemp) = Action::LookupOK then
+                        Campo := ColumnaTemp.Campo;
 
                 end;
             end;

@@ -80,11 +80,13 @@ page 7001190 "Lista Filtros Informes"
                     ApplicationArea = All;
                     trigger OnLookup(var Text: Text): Boolean
                     var
-                        Campos: Record Field;
+                        Columnas: Record "Columnas Informes";
+
+
                     begin
-                        Campos.SetRange(Campos.TableNo, TableId);
-                        If Page.Runmodal(9806, Campos) = Action::LookupOK then begin
-                            Rec.Campo := Campos."No.";
+                        Columnas.SetRange(Id, Rec."Id");
+                        If Page.Runmodal(Page::"Columnas Informes", Columnas) = Action::LookupOK then begin
+                            Rec.Campo := Columnas.campo;
                             CampoInformes := Rec.Campo;
                             exit(true);
                         end;
@@ -124,15 +126,25 @@ page 7001190 "Lista Filtros Informes"
     procedure NombreCampo(): Text
     var
 
-        Campos: Record Field;
+        Campos: Record "Columnas Informes";
+        Field: Record Field;
     begin
         if Rec.Campo = 0 then
             exit('');
 
-        Campos.SetRange(tableno, TableId);
-        Campos.SetRange("No.", Rec.Campo);
-        If Campos.FindFirst then
-            exit(Campos."Field Caption");
+        Campos.SetRange(Id, Rec.Id);
+        Campos.SetRange(Campo, Rec.Campo);
+        If Campos.FindFirst then begin
+            if Campos.Titulo <> '' then
+                exit(Campos.Titulo)
+            else begin
+                Field.SetRange(tableno, Campos.Table);
+                Field.SetRange("No.", Rec.Campo);
+                If Field.FindFirst then
+                    exit(Field."Field Caption");
+            end;
+            exit(Campos."Field Name");
+        end;
 
     end;
 

@@ -81,7 +81,8 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
             repeat
 
                 EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, true, false, '', TempExcelBuffer."Cell Type"::Text);
-
+                if Campos."Ancho Columna" <> 0 then
+                    TempExcelBuffer.SetColumnWidth(Campos.LetraColumna(Campos.Orden), Campos."Ancho Columna");
             until Campos.Next() = 0;
 
         "Periodos".SetRange(Id, Informes.Id);
@@ -279,7 +280,8 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                 FieldT::Integer:
                                     EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Number);
                                 FieldT::Decimal:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '#,##0.00', TempExcelBuffer."Cell Type"::Number);
+                                //EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
                                 FieldT::Option:
                                     EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
                                 FieldT::Code:

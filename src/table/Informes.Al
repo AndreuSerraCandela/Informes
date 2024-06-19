@@ -146,6 +146,7 @@ table 7001240 Informes
             begin
                 Clear(Periodicidad);
                 SetRecurringField();
+
             end;
         }
         field(20; "Run on Tuesdays"; Boolean)
@@ -281,7 +282,7 @@ table 7001240 Informes
         Columnas: Record "Columnas Informes";
     begin
         Columnas.SetRange(Id, Rec."Id");
-        If Columnas.FindFirst() then exit;
+        //If Columnas.FindFirst() then exit;
         OdataColumnChose.InitColumns(ObjectType, ObjectID, InActionType, InSourceServiceName, DestinationServiceName);
 
     end;
@@ -299,7 +300,7 @@ table 7001240 Informes
     end;
 
 
-    procedure GetColumnsTemp(ObjectType: Option ,,,,,,,,"Page","Query"; IdObjeto: integer; var Columnas: Record "Columnas Informes")
+    procedure GetColumnsTemp(var Columnas: Record "Columnas Informes" temporary)
     var
         TempTenantWebServiceColumns: Record "Tenant Web Service Columns" temporary;
 
@@ -309,6 +310,7 @@ table 7001240 Informes
         Fieldref: FieldRef;
         a: Integer;
         Existe: Boolean;
+        Tabla: Integer;
         TablaCamposPagina: record "Page Table Field";
     begin
         Columnas.DeleteAll();
@@ -321,6 +323,7 @@ table 7001240 Informes
                 Columnas.Table := TempTenantWebServiceColumns."Data Item";
                 If TempTenantWebServiceColumns."Field Caption" = '' then begin
                     RecRef.Open(TempTenantWebServiceColumns."Data Item");
+                    Tabla := TempTenantWebServiceColumns."Data Item";
                     Existe := RecRef.FieldExist(TempTenantWebServiceColumns."Field Number");
                     if Existe then begin
                         Fieldref := RecRef.FIELD(TempTenantWebServiceColumns."Field Number");
@@ -341,8 +344,8 @@ table 7001240 Informes
                 end;
 
             until TempTenantWebServiceColumns.Next() = 0;
-        If ObjectType = ObjectType::Page Then begin
-            TablaCamposPagina.SetRange("Page ID", IdObjeto);
+        If Rec."Tipo Objeto" = Rec."Tipo Objeto"::Page Then begin
+            TablaCamposPagina.SetRange("Page ID", Rec."Id Objeto");
             If TablaCamposPagina.FindFirst() then
                 repeat
                     Columnas.SetRange(Campo, TablaCamposPagina."Field ID");
@@ -361,8 +364,24 @@ table 7001240 Informes
                     end;
 
                 until TablaCamposPagina.Next() = 0;
-        end;
+            Field.SetRange(tableno, Tabla);
+            If Field.FindFirst() then
+                repeat
+                    Columnas.SetRange(Campo, Field."No.");
+                    if not Columnas.FindFirst() then begin
+                        Columnas.Init();
+                        Columnas.Campo := Field."No.";
+                        Columnas.Titulo := Field."Field Caption";
+                        Columnas."Field Name" := Field."FieldName";
+                        while not Columnas.Insert() do begin
+                            a += 1;
+                            Columnas.Id_campo := a;
+                        end;
+                    end;
 
+                until Field.Next() = 0;
+        end;
+        Columnas.Reset();
     end;
 
 
@@ -375,6 +394,7 @@ table 7001240 Informes
         RecRef: RecordRef;
         Fieldref: FieldRef;
         a: Integer;
+        Tabla: Integer;
         Existe: Boolean;
         TablaCamposPagina: record "Page Table Field";
     begin
@@ -388,6 +408,8 @@ table 7001240 Informes
                 Columnas.Include := TempTenantWebServiceColumns.Include;
                 Columnas."Field Name" := TempTenantWebServiceColumns."Field Name";
                 Columnas.Table := TempTenantWebServiceColumns."Data Item";
+                if Columnas.Table <> 0 then
+                    Tabla := Columnas.Table;
                 If TempTenantWebServiceColumns."Field Caption" = '' then begin
                     RecRef.Open(TempTenantWebServiceColumns."Data Item");
                     Existe := RecRef.FieldExist(TempTenantWebServiceColumns."Field Number");
@@ -402,12 +424,12 @@ table 7001240 Informes
                 Orden += 1;
                 Columnas.Orden := orden;
                 Columnas.Campo := TempTenantWebServiceColumns."Field Number";
-                if Existe then begin
-                    while not Columnas.Insert() do begin
-                        a += 1;
-                        Columnas.Id_campo := a;
-                    end;
+                //if Existe then begin
+                while not Columnas.Insert() do begin
+                    a += 1;
+                    Columnas.Id_campo := a;
                 end;
+
 
             until TempTenantWebServiceColumns.Next() = 0;
         If Informe."Tipo Objeto" = Informe."Tipo Objeto"::Page Then begin
@@ -432,6 +454,8 @@ table 7001240 Informes
                     end;
 
                 until TablaCamposPagina.Next() = 0;
+
+
         end;
 
     end;
@@ -468,222 +492,56 @@ table 7001240 Informes
         "Run on Wednesdays" := false;
     end;
 
-    procedure CalcNextRunTimeForRecurringReport(var Informes: Record "Informes"; StartingDateTime: DateTime): DateTime
+    procedure CalcNextRunTimeForRecurringReport(var JobQueueEntry: Record "Informes"; StartingDateTime: DateTime) NewRunDateTime: DateTime
     var
-        NewRunDateTime: DateTime;
-        NewRunDate: Date;
-        AdDay: integer;
-        Ejecurtar: Boolean;
+        RunOnDate: array[7] of Boolean;
+        StartingWeekDay: Integer;
+        NoOfExtraDays: Integer;
+        NoOfDays: Integer;
+        Found: Boolean;
     begin
-        if Informes.IsNextRunDateFormulaSet() then begin
-            NewRunDate := CalcDate(Informes.Periodicidad, DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        If (Informes."Run on Mondays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 0;
-                2:
-                    AdDay := -1;
-                3:
-                    AdDay := -2;
-                4:
-                    AdDay := -3;
-                5:
-                    AdDay := -4;
-                6:
-                    AdDay := -5;
-                7:
-                    AdDay := -6;
+        with JobQueueEntry do begin
+            //TestField("Recurring Job");
+            RunOnDate[1] := "Run on Mondays";
+            RunOnDate[2] := "Run on Tuesdays";
+            RunOnDate[3] := "Run on Wednesdays";
+            RunOnDate[4] := "Run on Thursdays";
+            RunOnDate[5] := "Run on Fridays";
+            RunOnDate[6] := "Run on Saturdays";
+            RunOnDate[7] := "Run on Sundays";
+            NewRunDateTime := StartingDateTime;
+            NoOfDays := 0;
+            if ("Ending Time" <> 0T) and (NewRunDateTime > GetEndingDateTime(NewRunDateTime)) then begin
+                NewRunDateTime := GetStartingDateTime(NewRunDateTime);
+                NoOfDays := NoOfDays + 1;
             end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        //Martes
-        If (Informes."Run on Tuesdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 1;
-                2:
-                    AdDay := 0;
-                3:
-                    AdDay := -1;
-                4:
-                    AdDay := -2;
-                5:
-                    AdDay := -3;
-                6:
-                    AdDay := -4;
-                7:
-                    AdDay := -5;
+
+            StartingWeekDay := Date2DWY(DT2Date(StartingDateTime), 1);
+            Found := RunOnDate[(StartingWeekDay - 1 + NoOfDays) mod 7 + 1];
+            NoOfExtraDays := 0;
+            while not Found and (NoOfExtraDays < 7) do begin
+                NoOfExtraDays := NoOfExtraDays + 1;
+                NoOfDays := NoOfDays + 1;
+                Found := RunOnDate[(StartingWeekDay - 1 + NoOfDays) mod 7 + 1];
             end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
+
+            if ("Starting Time" <> 0T) and (NewRunDateTime < GetStartingDateTime(NewRunDateTime)) then
+                NewRunDateTime := GetStartingDateTime(NewRunDateTime);
+
+            if (NoOfDays > 0) and (NewRunDateTime > GetStartingDateTime(NewRunDateTime)) then
+                NewRunDateTime := GetStartingDateTime(NewRunDateTime);
+
+            if ("Starting Time" = 0T) and (NoOfExtraDays > 0) and ("No. of Minutes between Runs" <> 0) then
+                NewRunDateTime := CreateDateTime(DT2Date(NewRunDateTime), 0T);
+
+            if Found then
+                NewRunDateTime := CreateDateTime(DT2Date(NewRunDateTime) + NoOfDays, DT2Time(NewRunDateTime));
         end;
-        //Miercoles
-        If (Informes."Run on Wednesdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 2;
-                2:
-                    AdDay := 1;
-                3:
-                    AdDay := 0;
-                4:
-                    AdDay := -1;
-                5:
-                    AdDay := -2;
-                6:
-                    AdDay := -3;
-                7:
-                    AdDay := -4;
-            end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        //Jueves
-        If (Informes."Run on Thursdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 3;
-                2:
-                    AdDay := 2;
-                3:
-                    AdDay := 1;
-                4:
-                    AdDay := 0;
-                5:
-                    AdDay := -1;
-                6:
-                    AdDay := -2;
-                7:
-                    AdDay := -3;
-            end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        //Viernes
-        If (Informes."Run on Fridays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 4;
-                2:
-                    AdDay := 3;
-                3:
-                    AdDay := 2;
-                4:
-                    AdDay := 1;
-                5:
-                    AdDay := 0;
-                6:
-                    AdDay := -1;
-                7:
-                    AdDay := -2;
-            end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        //Sabado
-        If (Informes."Run on Saturdays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 5;
-                2:
-                    AdDay := 4;
-                3:
-                    AdDay := 3;
-                4:
-                    AdDay := 2;
-                5:
-                    AdDay := 1;
-                6:
-                    AdDay := 0;
-                7:
-                    AdDay := -1;
-            end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        //Domingo
-        If (Informes."Run on Sundays") /*and ("No. of Minutes between Runs" = 0)*/ then begin
-            Case Date2DWY(Today, 1) of
-                1:
-                    AdDay := 6;
-                2:
-                    AdDay := 5;
-                3:
-                    AdDay := 4;
-                4:
-                    AdDay := 3;
-                5:
-                    AdDay := 2;
-                6:
-                    AdDay := 1;
-                7:
-                    AdDay := 0;
-            end;
-            if AdDay = 0 then
-                NewRunDate := CalcDate('1S', DT2Date(StartingDateTime)) else
-                NewRunDate := CalcDate('1S' + Format(AdDay) + 'D', DT2Date(StartingDateTime));
-            exit(CreateDateTime(NewRunDate, Informes."Starting Time"));
-        end;
-        if Informes."No. of Minutes between Runs" > 0 then
-            NewRunDateTime := AddMinutesToDateTime(StartingDateTime, Informes."No. of Minutes between Runs")
-        else begin
-            if Informes."Earliest Start Date/Time" <> 0DT then
-                StartingDateTime := Informes."Earliest Start Date/Time";
-            NewRunDateTime := CreateDateTime(DT2Date(StartingDateTime) + 1, 0T);
-        end;
-        if (Not Informes."Run on Mondays")
-        and
-        (Not Informes."Run on Tuesdays")
-        and
-        (Not Informes."Run on Wednesdays")
-        and
-        (Not Informes."Run on Thursdays")
-        and
-        (Not Informes."Run on Fridays")
-        and
-        (Not Informes."Run on Saturdays")
-        and
-        (Not Informes."Run on Sundays") then
-            exit(0DT);
-        repeat
-            Case Date2DWY(DT2Date(NewRunDateTime), 1) of
-                1:
-                    Ejecurtar := Informes."Run on Mondays";
-                2:
-                    Ejecurtar := Informes."Run on Tuesdays";
-                3:
-                    Ejecurtar := Informes."Run on Wednesdays";
-                4:
-                    Ejecurtar := Informes."Run on Thursdays";
-                5:
-                    Ejecurtar := Informes."Run on Fridays";
-                6:
-                    Ejecurtar := Informes."Run on Saturdays";
-                7:
-                    Ejecurtar := Informes."Run on Sundays";
-            end;
-            if Ejecurtar then
-                exit(NewRunDateTime);
-            NewRunDateTime := CreateDateTime(Calcdate('1D', DT2Date(StartingDateTime)), DT2Time(StartingDateTime));
-        until Ejecurtar;
 
 
     end;
+
+
 
     procedure AddMinutesToDateTime(SourceDateTime: DateTime; NoOfMinutes: Integer) NewDateTime: DateTime
     var
@@ -758,6 +616,8 @@ table 7001240 Informes
         if "Starting Time" = 0T then
             exit(CreateDateTime(DT2Date(Date), "Ending Time"));
         if "Starting Time" < "Ending Time" then
+            exit(CreateDateTime(DT2Date(Date), "Ending Time"));
+        if "Starting Time" = "Ending Time" then
             exit(CreateDateTime(DT2Date(Date), "Ending Time"));
         exit(CreateDateTime(DT2Date(Date) + 1, "Ending Time"));
     end;

@@ -52,6 +52,10 @@ page 7001192 "Columnas Informes"
                     ApplicationArea = Basic, Suite;
                     ToolTip = 'Specifies the Field Captions in a data set.';
                 }
+                field("Ancho Columna"; Rec."Ancho Columna")
+                {
+                    ApplicationArea = All;
+                }
 
             }
         }

@@ -21,6 +21,7 @@ table 7001244 "Columnas Informes"
                 Columnat: Record "Columnas Informes" temporary;
                 Preguntar: Boolean;
             begin
+                if Funcion = Funcion::Columna Then exit;
                 Informes.Get(Id);
                 Preguntar := Informes.Informe = Informes.Informe::"Web Service";
                 If Preguntar Then Preguntar := Confirm('¿Desea seleccionar un campo del web dervice?');
@@ -54,7 +55,7 @@ table 7001244 "Columnas Informes"
                 Columna: Record "Columnas Informes";
 
             begin
-
+                If Funcion = Funcion::Columna Then exit;
                 Columna.SetRange(Columna."Id", "Id");
                 If not Columna.FindFirst() then begin
                     Informes.InitDefaultColumns();
@@ -124,6 +125,12 @@ table 7001244 "Columnas Informes"
             caption = 'Table';
             DataClassification = ToBeClassified;
         }
+        field(10; "Ancho Columna"; Integer)
+        {
+            caption = 'Ancho Columna';
+            DataClassification = ToBeClassified;
+        }
+
 
 
 
@@ -208,6 +215,35 @@ table 7001244 "Columnas Informes"
 
         OdataColumnChose.InitColumns(ObjectType, ObjectID, InActionType, InSourceServiceName, DestinationServiceName);
 
+    end;
+
+    Procedure LetraColumna(Columna: integer) xlColID: Text
+    var
+        x: Integer;
+        i: Integer;
+        y: Integer;
+        c: Char;
+        t: Text[30];
+    begin
+        xlColID := '';
+        x := Columna;
+        while x > 26 do begin
+            y := x mod 26;
+            if y = 0 then
+                y := 26;
+            c := 64 + y;
+            i := i + 1;
+            t[i] := c;
+            x := (x - y) div 26;
+        end;
+        if x > 0 then begin
+            c := 64 + x;
+            i := i + 1;
+            t[i] := c;
+        end;
+        for x := 1 to i do
+            xlColID[x] := t[1 + i - x];
+        exit(xlColID);
     end;
 
 

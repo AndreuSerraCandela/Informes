@@ -16,6 +16,7 @@ Codeunit 7001130 ControlInformes
         Filtros: Record "Filtros Informes";
         Contratos: Page "Lista Contratos x Empresa";
         Conta: Page "MovContabilidad";
+        Panrorama: Page "PanoramaBy";
         Out: OutStream;
         ficheros: Record Ficheros temporary;
         Secuencia: Integer;
@@ -80,6 +81,12 @@ Codeunit 7001130 ControlInformes
                                     end;
 
                                 end;
+                            Informes::"Informes Financieros":
+                                begin
+                                    Clear(Panrorama);
+                                    Panrorama.ExportExcel(Filtros, Destinatario, out);
+
+                                end;
 
                         end;
                         ficheros.Modify();
@@ -94,7 +101,9 @@ Codeunit 7001130 ControlInformes
                     until Destinatario.Next() = 0;
                 end;
                 IF ProximaFecha <> 0DT tHEN begin
-                    Informe."Earliest Start Date/Time" := Informe.CalcNextRunTimeForRecurringReport(Informe, Informe."Earliest Start Date/Time");
+                    ProximaFecha := CurrentDateTime + MillisecondsToAdd;
+
+                    Informe."Earliest Start Date/Time" := Informe.CalcNextRunTimeForRecurringReport(Informe, ProximaFecha);
 
 
                 end;
@@ -300,7 +309,8 @@ Codeunit 7001130 ControlInformes
             repeat
 
                 EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, true, false, '', TempExcelBuffer."Cell Type"::Text);
-
+                if Campos."Ancho Columna" <> 0 then
+                    TempExcelBuffer.SetColumnWidth(Campos.LetraColumna(Campos.Orden), Campos."Ancho Columna");
             until Campos.Next() = 0;
 
 
@@ -401,7 +411,8 @@ Codeunit 7001130 ControlInformes
                             FieldT::Integer:
                                 EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Number);
                             FieldT::Decimal:
-                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
+                                EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '#,##0.00', TempExcelBuffer."Cell Type"::Number);
+                            //EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
                             FieldT::Option:
                                 EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
                             FieldT::Code:
@@ -627,7 +638,7 @@ Codeunit 7001130 ControlInformes
         repeat
 
             if HojasSeparadas then begin
-
+                TempExcelBuffer.SelectOrAddSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'));
                 Row := 0;
                 CrearCabecera(Informes.Id, TempExcelBuffer, Row, DesdeFecha, HastaFecha, FieldRef, TenantWebService.RecordId, RecReftemp);
                 Empresas.TestField("HojaExcel");
@@ -808,7 +819,7 @@ Codeunit 7001130 ControlInformes
                 end;
             until Periodos.Next() = 0;
             if HojasSeparadas then begin
-                TempExcelBuffer.SelectOrAddSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                //TempExcelBuffer.SelectOrAddSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'));
                 TempExcelBuffer.WriteSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'), Empresas.Empresa, UserId);
                 TempExcelBuffer.DeleteAll();
             end;
@@ -1157,7 +1168,8 @@ Codeunit 7001130 ControlInformes
             repeat
 
                 EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, true, false, '', TempExcelBuffer."Cell Type"::Text);
-
+                if Campos."Ancho Columna" <> 0 then
+                    TempExcelBuffer.SetColumnWidth(Campos.LetraColumna(Campos.Orden), Campos."Ancho Columna");
             until Campos.Next() = 0;
         If Empresas.FindFirst() then
             If Empresas."Columna Excel" <> 0 then

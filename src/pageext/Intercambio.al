@@ -303,7 +303,7 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                     EnterCell(
                                         RowNo + 1,
                                         2,
-                                        rMovPro."Document No.",
+                                        rMovPro."External Document No.",
                                         FALSE,
                                         FALSE,
                                         FALSE);

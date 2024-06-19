@@ -272,6 +272,18 @@ page 7001195 "Informes Card"
                     Informes.imprimirInformes(Rec.Id, 0DT, true);// Código para imprimir informe
                 end;
             }
+            action(Procesar)
+            {
+                ApplicationArea = All;
+                Image = ExecuteBatch;
+                Caption = 'Procesar Manualmente';
+                trigger OnAction()
+                var
+                    Informes: Codeunit ControlInformes;
+                begin
+                    Informes.imprimirInformes(Rec.Id, Rec."Earliest Start Date/Time", false);// Código para imprimir informe
+                end;
+            }
 
             action("Importar Plantilla")
             {

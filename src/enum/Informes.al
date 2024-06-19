@@ -4,6 +4,7 @@ enum 7001190 Informes
     value(1; "Estadisticas Contabilidad") { }
     value(2; "Tablas") { }
     value(3; "Web Service") { }
+    value(4; "Informes Financieros") { }
 }
 enum 7001191 Funciones
 {
@@ -24,6 +25,7 @@ enum 7001191 Funciones
     value(13; "Semana") { Caption = 'Semana'; }
     value(14; "Diferencia") { Caption = 'Diferencia'; }
     value(15; "GetTotContNew") { Caption = 'Total Contrato o Total Facturado'; }
+    value(16; "Columna") { Caption = 'Columna'; }
 
 }
 enumextension 90144 EnumEscenarioInformes extends "Email Scenario"

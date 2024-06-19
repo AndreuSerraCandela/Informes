@@ -221,7 +221,7 @@ page 7001193 "Informes Setup Wizard"
                                 if Rec."Id Objeto" <> xRec."Id Objeto" then
                                     ClearTables();
                                 Rec.InitColumns(ObjectTypeLookup, Rec."Id Objeto", ActionType, ServiceNameLookup, ServiceNameEdit);
-                                Rec.GetColumnsTemp(ObjectTypeLookup, ObjectIdLookup, TempTenantWebServiceColumns);
+                                Rec.GetColumnsTemp(TempTenantWebServiceColumns);
                                 CurrPage.ODataColSubForm.Page.CargarDatos(TempTenantWebServiceColumns);
                             end;
                         end;
@@ -245,7 +245,7 @@ page 7001193 "Informes Setup Wizard"
                             if Rec."Id Objeto" <> xRec."Id Objeto" then
                                 ClearTables();
                             Rec.InitColumns(ObjectTypeLookup, Rec."Id Objeto", ActionType, ServiceNameLookup, ServiceNameEdit);
-                            Rec.GetColumnsTemp(ObjectTypeLookup, ObjectIdLookup, TempTenantWebServiceColumns);
+                            Rec.GetColumnsTemp(TempTenantWebServiceColumns);
                             CurrPage.ODataColSubForm.Page.CargarDatos(TempTenantWebServiceColumns);
                         end;
                     }
