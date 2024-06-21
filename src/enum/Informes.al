@@ -5,6 +5,7 @@ enum 7001190 Informes
     value(2; "Tablas") { }
     value(3; "Web Service") { }
     value(4; "Informes Financieros") { }
+    value(5; "Saldo InterEmpresas") { }
 }
 enum 7001191 Funciones
 {

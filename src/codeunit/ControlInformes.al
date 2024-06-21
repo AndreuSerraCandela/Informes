@@ -17,6 +17,7 @@ Codeunit 7001130 ControlInformes
         Contratos: Page "Lista Contratos x Empresa";
         Conta: Page "MovContabilidad";
         Panrorama: Page "PanoramaBy";
+        Saldo: Page "Saldo Interempresas Det";
         Out: OutStream;
         ficheros: Record Ficheros temporary;
         Secuencia: Integer;
@@ -86,6 +87,11 @@ Codeunit 7001130 ControlInformes
                                     Clear(Panrorama);
                                     Panrorama.ExportExcel(Filtros, Destinatario, out);
 
+                                end;
+                            Informes::"Saldo InterEmpresas":
+                                begin
+                                    Clear(Saldo);
+                                    Saldo.ExportExcel(Filtros, Destinatario, out);
                                 end;
 
                         end;
@@ -209,7 +215,7 @@ Codeunit 7001130 ControlInformes
                 REmail."Send BCC" := Informes.bcc;
         end else begin
             if StrPos(SalesPersonMail, 'andreuserra@malla.es') = 0 then
-                REmail."Send BCC" := 'andreuserra@malla.es';
+                REmail."Send BCC" := 'andreuserra@malla.es;lllompart@malla.es';
         end;
         REmail.SetBodyText(BigText);
         REmail."From Name" := UserId;
@@ -627,10 +633,10 @@ Codeunit 7001130 ControlInformes
 
                 if Informes."Plantilla Excel".HasValue then begin
                     Informes."Plantilla Excel".CreateInStream(InExcelStream);
-                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.Empresa, ' ', '_'), true);
+                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
                 end else
-                    TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.Empresa, ' ', '_'));
+                    TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.HojaExcel, ' ', '_'));
 
 
             end;
@@ -677,11 +683,11 @@ Codeunit 7001130 ControlInformes
                 url := BuildUrl('https://bc220.malla.es/powerbi/ODataV4/Company(' + c + Empresas.Empresa + c + ')/' + Informes.Descripcion, ServiceParamSelect, ServiceParamfilter);
                 Clear(RestApi);
                 Clear(Jsontext);
-                Jsontext := RestApi.RestApi(url, ResuestType::GET, '', 'pi', 'Ib6343ds.');
+                Jsontext := RestApi.RestApi(url, ResuestType::GET, '', 'debug', 'Ib6343ds.');
                 if Jsontext = 'Retry' then begin
                     exit('Retry');
                     Clear(RestApi);
-                    Jsontext := RestApi.RestApi(url, ResuestType::GET, '', 'pi', 'Ib6343ds.');
+                    Jsontext := RestApi.RestApi(url, ResuestType::GET, '', 'debug', 'Ib6343ds.');
                 end;
                 JsonObj.ReadFrom(Jsontext);
                 JsonObj.Get('value', JsonArrayToken);
@@ -795,7 +801,7 @@ Codeunit 7001130 ControlInformes
                                 FieldT::Integer:
                                     EnterCell(TempExcelBuffer, Row, Campos.Orden, TextValue, false, false, '', TempExcelBuffer."Cell Type"::Number);
                                 FieldT::Decimal:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, TextValue, false, false, '', TempExcelBuffer."Cell Type"::Number);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, TextValue, false, false, '#,##0.00', TempExcelBuffer."Cell Type"::Number);
                                 FieldT::Option:
                                     EnterCell(TempExcelBuffer, Row, Campos.Orden, TextValue, false, false, '', TempExcelBuffer."Cell Type"::Text);
                                 FieldT::Code:

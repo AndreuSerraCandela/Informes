@@ -304,9 +304,10 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
                     Contrato.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
                     NoContrato := RecrefTemp.Field(Rec.FieldNo("Nº Contrato")).Value;
-                    Contrato.Get(Contrato."Document Type"::Order, NoContrato);
-                    Contrato."Ofrecida ampliación" := true;
-                    if Informes."Crear Tarea" then Contrato.Modify;
+                    If Contrato.Get(Contrato."Document Type"::Order, NoContrato) Then begin
+                        Contrato."Ofrecida ampliación" := true;
+                        if Informes."Crear Tarea" then Contrato.Modify;
+                    end;
                 //end;
                 until RecrefTemp.Next() = 0;
             //RecReftemp.Close();

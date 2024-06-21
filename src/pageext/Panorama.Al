@@ -27,8 +27,8 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
         Campos: Record "Columnas Informes";
         RecRef: RecordRef;
         RecTemp: Record "Acc. Schedule Line" temporary;
-        ColumnValues: array[34] of Decimal;
-        ColumnCaptions: array[34] of Text[250];
+        ColumnValues: array[100] of Decimal;
+        ColumnCaptions: array[100] of Text[250];
         Valor: Variant;
         FieldRef: FieldRef;
         Id: RecordId;
@@ -138,10 +138,10 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
 
                 if Informes."Plantilla Excel".HasValue then begin
                     Informes."Plantilla Excel".CreateInStream(InExcelStream);
-                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.Empresa, ' ', '_'), true);
+                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
                 end else
-                    TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.Empresa, ' ', '_'));
+                    TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.HojaExcel, ' ', '_'));
 
 
             end;
@@ -209,7 +209,7 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
                         Rec.Get(Rec."Schedule Name", Rec."Line No.");
                         Clear(ColumnValues);
                         RecTemp := Rec;
-                        If Rec.Insert Then;
+                        If RecTEMP.Insert Then;
                         DevuelveColumnas(Rectemp, ColumnValues, ColumnCaptions);
                         if Informes."Crear Tarea" then
                             CreateTask(Destinatario.Valor
