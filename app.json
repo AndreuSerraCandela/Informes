@@ -35,7 +35,7 @@
   "application": "22.0.0.0",
   "resourceExposurePolicy": {
     "allowDebugging": true,
-    "allowDownloadingSource": false,
+    "allowDownloadingSource": true,
     "includeSourceInSymbolFile": false
   },
   "runtime": "11.0"

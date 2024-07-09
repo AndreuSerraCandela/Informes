@@ -3,7 +3,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
     procedure ExportExcel(var Filtros: Record "Filtros Informes"; Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
     var
-        TempExcelBuffer: Record "Excel Buffer" temporary;
+        TempExcelBuffer: Record "Excel Buffer 2" temporary;
         ContratosLblEP: Label 'Contratos';
         ExcelFileNameEPR: Text;//Label 'Contratos_%1_%2';
         RecordLink: Record "Record Link";
@@ -24,6 +24,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         Continuar: Boolean;
         FechaTarea: Date;
         Campos: Record "Columnas Informes";
+        Formatos: Record "Formato Columnas";
         RecRef: RecordRef;
         Contrato: Record "Sales Header";
         Valor: Variant;
@@ -47,9 +48,9 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         if Destinatario."Nombre Informe" <> '' then
             ExcelFileNameEPR := ConvertStr(Destinatario."Nombre Informe", ' ', '_');
         Row := 1;
-        EnterCell(TempExcelBuffer, Row, 1, StrSubstNo('%1 de %2', Informes.Descripcion, DT2Date(Informes."Earliest Start Date/Time")), true, false, '', TempExcelBuffer."Cell Type"::Text);
+        EnterCell(TempExcelBuffer, Row, 1, StrSubstNo('%1 de %2', Informes.Descripcion, DT2Date(Informes."Earliest Start Date/Time")), true, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
         Row += 1;
-        EnterCell(TempExcelBuffer, Row, 1, 'Filtros:', true, false, '', TempExcelBuffer."Cell Type"::Text);
+        EnterCell(TempExcelBuffer, Row, 1, 'Filtros:', true, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
         If Filtros.FindSet() then
             repeat
                 Row += 1;
@@ -58,14 +59,14 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                 FieldRef := RecReftemp.Field(Filtros.Campo);
                 if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
                     FieldRef.SetRange(DesdeFecha, HastaFecha);
-                    EnterCell(TempExcelBuffer, Row, 1, FieldRef.Caption, true, false, '', TempExcelBuffer."Cell Type"::Text);
+                    EnterCell(TempExcelBuffer, Row, 1, FieldRef.Caption, true, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
                     if DesdeFecha <> 0D then
-                        EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
-                    EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Text);
+                        EnterCell(TempExcelBuffer, Row, 2, CopyStr(TypeHelper.FormatDateWithCurrentCulture(DesdeFecha), 1, 250), false, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
+                    EnterCell(TempExcelBuffer, Row, 3, CopyStr(TypeHelper.FormatDateWithCurrentCulture(HastaFecha), 1, 250), false, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
                 end else begin
                     FieldRef.SetFilter(Filtros.Valor);
-                    EnterCell(TempExcelBuffer, Row, 1, FieldRef.Caption, true, false, '', TempExcelBuffer."Cell Type"::Text);
-                    EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                    EnterCell(TempExcelBuffer, Row, 1, FieldRef.Caption, true, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
+                    EnterCell(TempExcelBuffer, Row, 2, Filtros.Valor, false, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
                 end;
             until Filtros.Next() = 0;
         Row += 1;
@@ -79,8 +80,11 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         Campos.SetRange(Include, true);
         if Campos.FindSet() then
             repeat
-
-                EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, true, false, '', TempExcelBuffer."Cell Type"::Text);
+                If Not Formatos.Get(campos.Id, campos.Id_campo, true) then begin
+                    Formatos.Init();
+                    Formatos.Bold := true;
+                end;
+                EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", '', TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                 if Campos."Ancho Columna" <> 0 then
                     TempExcelBuffer.SetColumnWidth(Campos.LetraColumna(Campos.Orden), Campos."Ancho Columna");
             until Campos.Next() = 0;
@@ -266,36 +270,42 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                         Valor := '';
                                 end;
                             end;
+                            If Not Formatos.Get(campos.Id, campos.Id_campo, false) then begin
+                                Formatos.Init();
+                                if FieldT = FieldType::Decimal then
+                                    Formatos."Formato Columna" := '_-* #,##0.00_-;-* #,##0.00_-;';
+
+                            end;
                             Case FieldT of
                                 FieldT::Date:
                                     begin
                                         if Valor.IsDate then Fecha := Valor else Fecha := 0D;
                                         iF Fecha <> 0D then
-                                            EnterCell(TempExcelBuffer, Row, Campos.Orden, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Fecha), 1, 250), false, false, '', TempExcelBuffer."Cell Type"::Date)
+                                            EnterCell(TempExcelBuffer, Row, Campos.Orden, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Fecha), 1, 250), Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Date, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo")
                                         else
-                                            EnterCell(TempExcelBuffer, Row, Campos.Orden, '', false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                            EnterCell(TempExcelBuffer, Row, Campos.Orden, '', Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                     END;
                                 FieldT::Time:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Time);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Time, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Integer:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Number);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Number, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Decimal:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '#,##0.00', TempExcelBuffer."Cell Type"::Number);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Number, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 //EnterCell(TempExcelBuffer, Row, Campos.Orden, Matrix.FormatAmount(Valor, Rf, False), false, false, '', TempExcelBuffer."Cell Type"::Number);
                                 FieldT::Option:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Code:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Text:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Boolean:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Format(Valor), Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::RecordId:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Blob:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                 FieldT::Guid:
-                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, false, false, '', TempExcelBuffer."Cell Type"::Text);
+                                    EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
 
                             End;
 
@@ -320,7 +330,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
         end else
             TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
-        TempExcelBuffer.WriteSheet(ContratosLblEP, CompanyName, UserId);
+        TempExcelBuffer.WriteSheet(ContratosLblEP, CompanyName, UserId, Informes."Orientación");
         TempExcelBuffer.CloseBook();
         TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, CurrentDateTime, UserId));
         TempExcelBuffer.SaveToStream(ExcelStream, true);
@@ -342,14 +352,16 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
     end;
 
     local procedure EnterCell(
-        Var TempExcelBuf: Record "Excel Buffer" temporary;
-        RowNo: Integer;
-        ColumnNo: Integer;
-        CellValue: Text[250];
-        Bold: Boolean;
-        UnderLine: Boolean;
-        NumberFormat: Text[30];
-        CellType: Option)
+         Var TempExcelBuf: Record "Excel Buffer 2" temporary;
+         RowNo: Integer;
+         ColumnNo: Integer;
+         CellValue: Text[250];
+         Bold: Boolean;
+         Italic: Boolean;
+         UnderLine: Boolean;
+         DobleUnderLine: Boolean;
+         NumberFormat: Text;
+         CellType: Option; Fuente: Text[30]; Tamaño: Integer; Color: Text; ColorFondo: Text)
     begin
         TempExcelBuf.Init();
         TempExcelBuf.Validate("Row No.", RowNo);
@@ -357,9 +369,15 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         TempExcelBuf."Cell Value as Text" := CellValue;
         TempExcelBuf.Formula := '';
         TempExcelBuf.Bold := Bold;
+        TempExcelBuf.Italic := Italic;
         TempExcelBuf.Underline := UnderLine;
+        TempExcelBuf."Double Underline" := DobleUnderLine;
         TempExcelBuf.NumberFormat := NumberFormat;
         TempExcelBuf."Cell Type" := CellType;
+        TempExcelBuf."Font Name" := Fuente;
+        TempExcelBuf."Font Size" := Tamaño;
+        TempExcelBuf."Font Color" := Color;
+        TempExcelBuf."Background Color" := ColorFondo;
         TempExcelBuf.Insert();
     end;
 

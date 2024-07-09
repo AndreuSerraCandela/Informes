@@ -38,3 +38,8 @@ enumextension 90144 EnumEscenarioInformes extends "Email Scenario"
 
 
 }
+enum 7001192 Orientacion
+{
+    value(0; "Vertical") { }
+    value(1; "Horizontal") { }
+}

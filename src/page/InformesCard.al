@@ -34,184 +34,139 @@ page 7001195 "Informes Card"
                         end;
                     }
                 }
-                field(Bcc; Rec.Bcc)
-                {
-                    ApplicationArea = All;
-                }
-                group(Recurrencia)
-                {
-                    field("Fecha/Hora Inicio"; Rec."Earliest Start Date/Time")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies the earliest date and time when the job queue entry should be run. The format for the date and time must be month/day/year hour:minute, and then AM or PM. For example, 3/10/2021 12:00 AM.';
-                    }
-                    field("Fecha expiracion"; Rec."Expiration Date/Time")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        Importance = Additional;
-                        ToolTip = 'Specifies the date and time when the job queue entry is to expire, after which the job queue entry will not be run.  The format for the date and time must be month/day/year hour:minute, and then AM or PM. For example, 3/10/2021 12:00 AM.';
-                    }
 
-                    field("Lunes"; Rec."Run on Mondays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Mondays.';
-                    }
-                    field("Martes"; Rec."Run on Tuesdays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Tuesdays.';
-                    }
-                    field("Miércoles"; Rec."Run on Wednesdays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Wednesdays.';
-                    }
-                    field("Jueves"; Rec."Run on Thursdays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Thursdays.';
-                    }
-                    field("Viernes"; Rec."Run on Fridays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Fridays.';
-                    }
-                    field("Sábados"; Rec."Run on Saturdays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Saturdays.';
-                    }
-                    field("Domingos"; Rec."Run on Sundays")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        ToolTip = 'Specifies that the job queue entry runs on Sundays.';
-                    }
-                    field("Periodicidad"; Rec.Periodicidad)
-                    {
-                        ApplicationArea = Basic, Suite;
-                        Caption = 'Periodicidad';
-
-
-
-                    }
-                    field("Hora Inicio"; Rec."Starting Time")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        Importance = Promoted;
-                        ToolTip = 'Specifies the earliest time of the day that the recurring job queue entry is to be run.';
-                    }
-                    field("Hora Fin"; Rec."Ending Time")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        Importance = Promoted;
-                        ToolTip = 'Specifies the latest time of the day that the recurring job queue entry is to be run.';
-                    }
-                    field("Minutos entre ejecuciones"; Rec."No. of Minutes between Runs")
-                    {
-                        ApplicationArea = Basic, Suite;
-                        Importance = Promoted;
-                        ToolTip = 'Specifies the minimum number of minutes that are to elapse between runs of a job queue entry. The value cannot be less than one minute. This field only has meaning if the job queue entry is set to be a recurring job. If you use a no. of minutes between runs, the date formula setting is cleared.';
-                    }
-                }
-                field(Informe; Rec.Informe)
+                group("Destinatarios")
                 {
-                    ApplicationArea = All;
-                }
-                // field("Tabla filtros"; Rec."Tabla filtros")
-                // {
-                //     ApplicationArea = All;
-                //     trigger OnValidate()
-                //     var
-                //         AllObjWithCaption: record AllObjWithCaption;
-                //     begin
-                //         AllObjWithCaption.GET(AllObjWithCaption."Object Type"::Table, Rec."Tabla filtros");
-                //         "Nombre Tabla" := AllObjWithCaption."Object Caption";
-                //         CurrPage.UPDATE(false);
-                //     end;
-                // }
-                field("Nombre"; "Nombre Tabla")
-                {
-                    ApplicationArea = All;
-                    Editable = false;
-
-                }
-                field("Tipo Objeto"; Rec."Tipo Objeto")
-                {
-                    ApplicationArea = All;
-                    //  Editable = OtrosInformes;
-                }
-                field("Id Objeto"; Rec."Id Objeto")
-                {
-                    ApplicationArea = All;
-                    //Editable = OtrosInformes;
-                    trigger OnValidate()
-                    var
-                        AllObjWithCaption: record AllObjWithCaption;
-                        Columnas: Record "Columnas Informes";
-                        CreateOrCopy: Option "Create a new data set","Create a copy of an existing data set","Edit an existing data set";
-                        "source Service Name": Text;
-                        "Destination Service Name": Text;
-                    begin
-                        AllObjWithCaption.GET(Rec."Tipo Objeto", Rec."Id Objeto");
-                        "Nombre Query" := AllObjWithCaption."Object Caption";
-                        Columnas.SetRange(Id, Rec."Id");
-                        if Columnas.Count = 0 Then begin
-                            If Rec."Id Objeto" <> 0 Then
-                                Rec.InitColumns(Rec."Tipo Objeto", Rec."Id Objeto", CreateOrCopy::"Create a new data set", "Source Service Name", "Destination Service Name");
-                            Rec.GetColumns(Rec);
-                            CurrPage.UPDATE(false);
-                            If Columnas.FindFirst() Then
-                                if AllObjWithCaption.GET(AllObjWithCaption."Object Type"::Table, columnas.Table) then
-                                    "Nombre Tabla" := AllObjWithCaption."Object Caption";
+                    field("Enviar a"; ProcedureDestinatarios())
+                    {
+                        ApplicationArea = All;
+                        trigger OnDrillDown()
+                        var
+                            Destinatarios: Record "Destinatarios Informes";
+                        begin
+                            Destinatarios.SetRange(Destinatarios.Id, Rec."ID");
+                            Page.RunModal(Page::"Lista Destinatarios Informes", Destinatarios);
                         end;
-                    end;
+                    }
+                    field(Bcc; Rec.Bcc)
+                    {
+                        ApplicationArea = All;
+                    }
                 }
-                field("Nombre Objeto"; "Nombre Query")
+                group(Definición)
                 {
-                    ApplicationArea = All;
-                    Editable = false;
-                    //Enabled = OtrosInformes;
+                    field("Tipo Informe"; Rec.Informe)
+                    {
+                        ApplicationArea = All;
+                        Caption = 'Tipo Informe';
+                    }
+                    // field("Tabla filtros"; Rec."Tabla filtros")
+                    // {
+                    //     ApplicationArea = All;
+                    //     trigger OnValidate()
+                    //     var
+                    //         AllObjWithCaption: record AllObjWithCaption;
+                    //     begin
+                    //         AllObjWithCaption.GET(AllObjWithCaption."Object Type"::Table, Rec."Tabla filtros");
+                    //         "Nombre Tabla" := AllObjWithCaption."Object Caption";
+                    //         CurrPage.UPDATE(false);
+                    //     end;
+                    // }
+                    // field("Nombre"; "Nombre Tabla")
+                    // {
+                    //     ApplicationArea = All;
+                    //     Editable = false;
 
-                }
-                field("Crear Tarea"; Rec."Crear Tarea")
-                {
-                    ApplicationArea = All;
-                }
-                field("Descripcion Tarea"; Rec."Descripcion Tarea")
-                {
-                    ApplicationArea = All;
-                }
-                field("Campo Tarea"; CampoTarea)
-                {
-                    ApplicationArea = All;
-                    trigger OnLookup(var Text: Text): Boolean
-                    var
-                        Campos: Record Field;
-                    begin
-                        Campos.SetRange(Campos.TableNo, TableId);
-                        If Page.Runmodal(9806, Campos) = Action::LookupOK then begin
-                            Rec."Campo Tarea" := Campos."No.";
-                            CampoTarea := Rec."Campo Tarea";
-                            exit(true);
+                    // }
+                    field("Tipo Objeto"; Rec."Tipo Objeto")
+                    {
+                        ApplicationArea = All;
+                        //  Editable = OtrosInformes;
+                    }
+                    field("Id Objeto"; Rec."Id Objeto")
+                    {
+                        ApplicationArea = All;
+                        //Editable = OtrosInformes;
+                        trigger OnValidate()
+                        var
+                            AllObjWithCaption: record AllObjWithCaption;
+                            Columnas: Record "Columnas Informes";
+                            CreateOrCopy: Option "Create a new data set","Create a copy of an existing data set","Edit an existing data set";
+                            "source Service Name": Text;
+                            "Destination Service Name": Text;
+                        begin
+                            AllObjWithCaption.GET(Rec."Tipo Objeto", Rec."Id Objeto");
+                            "Nombre Query" := AllObjWithCaption."Object Caption";
+                            Columnas.SetRange(Id, Rec."Id");
+                            if Columnas.Count = 0 Then begin
+                                If Rec."Id Objeto" <> 0 Then
+                                    Rec.InitColumns(Rec."Tipo Objeto", Rec."Id Objeto", CreateOrCopy::"Create a new data set", "Source Service Name", "Destination Service Name");
+                                Rec.GetColumns(Rec);
+                                CurrPage.UPDATE(false);
+                                If Columnas.FindFirst() Then
+                                    if AllObjWithCaption.GET(AllObjWithCaption."Object Type"::Table, columnas.Table) then
+                                        "Nombre Tabla" := AllObjWithCaption."Object Caption";
+                            end;
                         end;
-                        exit(false);
-                    end;
+                    }
+                    field("Nombre Objeto"; "Nombre Query")
+                    {
+                        ApplicationArea = All;
+                        Editable = false;
+                        //Enabled = OtrosInformes;
 
+                    }
+                    field("Crear Web Service"; Rec."Crear Web Service")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Orientación Papel"; Rec."Orientación")
+                    {
+                        ApplicationArea = All;
+                    }
                 }
-                field("Nombre Campo"; NombreCampo())
+                group("Tarea")
                 {
-                    ApplicationArea = All;
+
+                    field("Crear Tarea"; Rec."Crear Tarea")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Descripcion Tarea"; Rec."Descripcion Tarea")
+                    {
+                        ApplicationArea = All;
+                    }
+                    field("Campo Tarea"; CampoTarea)
+                    {
+                        ApplicationArea = All;
+                        trigger OnLookup(var Text: Text): Boolean
+                        var
+                            Campos: Record Field;
+                        begin
+                            Campos.SetRange(Campos.TableNo, TableId);
+                            If Page.Runmodal(9806, Campos) = Action::LookupOK then begin
+                                Rec."Campo Tarea" := Campos."No.";
+                                CampoTarea := Rec."Campo Tarea";
+                                exit(true);
+                            end;
+                            exit(false);
+                        end;
+
+                    }
+                    field("Nombre Campo"; NombreCampo())
+                    {
+                        ApplicationArea = All;
+                    }
                 }
-                field("Crear Web Service"; Rec."Crear Web Service")
-                {
-                    ApplicationArea = All;
-                }
+
+
+
             }
-            part(Destinatarios; "Destinatarios Informes")
+            part("LIsta Destinatarios"; "Destinatarios Informes")
             {
                 ApplicationArea = All;
                 SubPageLink = Id = fIELD(Id);
+                Visible = False;
 
             }
             // part(Campos; "Campos Informes")
@@ -240,7 +195,82 @@ page 7001195 "Informes Card"
                 ApplicationArea = All;
                 SubPageLink = Id = fIELD(Id);
             }
+            group(Recurrencia)
+            {
+                field("Fecha/Hora Inicio"; Rec."Earliest Start Date/Time")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies the earliest date and time when the job queue entry should be run. The format for the date and time must be month/day/year hour:minute, and then AM or PM. For example, 3/10/2021 12:00 AM.';
+                }
+                field("Fecha expiracion"; Rec."Expiration Date/Time")
+                {
+                    ApplicationArea = Basic, Suite;
+                    Importance = Additional;
+                    ToolTip = 'Specifies the date and time when the job queue entry is to expire, after which the job queue entry will not be run.  The format for the date and time must be month/day/year hour:minute, and then AM or PM. For example, 3/10/2021 12:00 AM.';
+                }
 
+                field("Lunes"; Rec."Run on Mondays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Mondays.';
+                }
+                field("Martes"; Rec."Run on Tuesdays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Tuesdays.';
+                }
+                field("Miércoles"; Rec."Run on Wednesdays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Wednesdays.';
+                }
+                field("Jueves"; Rec."Run on Thursdays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Thursdays.';
+                }
+                field("Viernes"; Rec."Run on Fridays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Fridays.';
+                }
+                field("Sábados"; Rec."Run on Saturdays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Saturdays.';
+                }
+                field("Domingos"; Rec."Run on Sundays")
+                {
+                    ApplicationArea = Basic, Suite;
+                    ToolTip = 'Specifies that the job queue entry runs on Sundays.';
+                }
+                field("Periodicidad"; Rec.Periodicidad)
+                {
+                    ApplicationArea = Basic, Suite;
+                    Caption = 'Periodicidad';
+
+
+
+                }
+                field("Hora Inicio"; Rec."Starting Time")
+                {
+                    ApplicationArea = Basic, Suite;
+                    Importance = Promoted;
+                    ToolTip = 'Specifies the earliest time of the day that the recurring job queue entry is to be run.';
+                }
+                field("Hora Fin"; Rec."Ending Time")
+                {
+                    ApplicationArea = Basic, Suite;
+                    Importance = Promoted;
+                    ToolTip = 'Specifies the latest time of the day that the recurring job queue entry is to be run.';
+                }
+                field("Minutos entre ejecuciones"; Rec."No. of Minutes between Runs")
+                {
+                    ApplicationArea = Basic, Suite;
+                    Importance = Promoted;
+                    ToolTip = 'Specifies the minimum number of minutes that are to elapse between runs of a job queue entry. The value cannot be less than one minute. This field only has meaning if the job queue entry is set to be a recurring job. If you use a no. of minutes between runs, the date formula setting is cleared.';
+                }
+            }
         }
     }
     // añadir botón para imprimir informes
@@ -396,6 +426,19 @@ page 7001195 "Informes Card"
         If Campos.FindFirst then
             exit(Campos."Field Caption");
 
+    end;
+
+    local procedure ProcedureDestinatarios() Dest: Text
+    var
+        Destinatarios: Record "Destinatarios Informes";
+
+    begin
+        Destinatarios.SetRange(Destinatarios.Id, Rec."ID");
+        if Destinatarios.FindSet() then
+            repeat
+                Dest += Destinatarios."e-mail" + ';';
+            until Destinatarios.Next() = 0;
+        exit(Copystr(Dest, 1, StrLen(Dest) - 1));
     end;
 
 

@@ -22,7 +22,11 @@ table 7001245 "Empresas Informes"
         {
             DataClassification = ToBeClassified;
         }
-        field(5;"Columna Excel"; Integer)
+        field(5; "Columna Excel"; Integer)
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(6; "Incluir"; Boolean)
         {
             DataClassification = ToBeClassified;
         }

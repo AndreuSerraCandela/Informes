@@ -32,35 +32,64 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                     SaldoPro: Decimal;
                 BEGIN
                     RxE.SETRANGE(RxE."Código Intercambio", Rec."No.");
-                    EnterCell(1, 1, COMPANYNAME, true, FALSE, false);
+                    EnterCell(1, 1, COMPANYNAME, true, FALSE, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
+                    //        RowNo, ColumnNo, CellValue  , Bold, Italic, UnderLine, DobleUnderLine, NumberFormat, CellType,                         Fuente, Tamaño, Color, ColorFondo
                     EnterCell(
                         2,
                         1,
                         'A la atención de ' + Rec.Name,
                         false,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        false,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
                     EnterCell(
                         3,
                         1,
                         'Palma de Mallorca a ' + Format(Today, 0, '<Day,2> de <Month text> de <Year4>'),
                         false,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        false,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
                     EnterCell(
                         4,
                         1,
                         'Según nuestro acuerdo de intercambio. a fecha de hoy, hemos compensado',
                         false,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        false,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
                     EnterCell(
                         5,
                         1,
                         'la/s siguiente/s factura/s:',
                         false,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        false,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
                     RowNo := 1;
                     If RxE.FINDFIRST THEN
                         REPEAT
@@ -78,70 +107,140 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                    'Facturas emitidas por ' + rEmp.Name + ' a ' + Rec.Name,
                                    false,
                                    false,
-                                   false);
+                                   false,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     1,
                                     'FECHA',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     2,
                                     'FACTURA',
                                     TRUE,
                                     FALSE,
-                                    True);
+                                    True,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 11,
                                     3,
                                     'TOTAL',
                                     TRUE,
                                     FALSE,
-                                    false);
+                                    false,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     3,
                                     'FACTURA',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 10,
                                     4,
                                     'IMPORTE',
                                     TRUE,
                                     FALSE,
-                                    false);
+                                    false,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 11,
                                     4,
                                     'PENDIENTE',
                                     TRUE,
                                     FALSE,
-                                    false);
+                                    false,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     4,
                                     'LIQUIDAR',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 11,
                                     5,
                                     'IMPORTE',
                                     TRUE,
                                     FALSE,
-                                    false);
+                                    false,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     5,
                                     'LIQUIDADO',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 RowNo += 12;
                                 SaldoLinea := 0;
                                 repeat
@@ -152,14 +251,28 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                        Format(rMovCli."Posting Date", 0, '<Day,2>/<Month,2>/<Year4>'),
                                        FALSE,
                                        FALSE,
-                                       FALSE);
+                                       FALSE,
+                                        false,
+                                        '',
+                                        TempExcelBuffer."Cell Type"::Text,
+                                        '',
+                                        0,
+                                        '',
+                                        '');
                                     EnterCell(
                                         RowNo + 1,
                                         2,
                                         rMovCli."Document No.",
                                         FALSE,
                                         FALSE,
-                                        FALSE);
+                                        FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                     DetMovCli.Reset();
                                     DetMovCli.ChangeCompany(RxE.Empresa);
                                     DetMovCli.SetRange(DetMovCli."Entry Type", DetMovCli."Entry Type"::"Initial Entry");
@@ -172,27 +285,49 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                         Format(DetMovCli."Amount (LCY)", 0),
                                         FALSE,
                                         FALSE,
-                                        FALSE);
+                                        FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::number,
+                                '',
+                                0,
+                                '',
+                                '');
                                     DetMovCli.Reset();
                                     DetMovCli.ChangeCompany(RxE.Empresa);
                                     DetMovCli.SetRange(DetMovCli."Entry Type");
                                     DetMovCli.SETRANGE("Cust. Ledger Entry No.", rMovCli."Entry No.");
                                     DetMovCli.SetRange("Ledger Entry Amount");
                                     DetMovCli.CalcSums("Amount (LCY)");
+                                    //'_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-';
                                     EnterCell(
                                         RowNo + 1,
                                         4,
                                         Format(DetMovCli."Amount (LCY)", 0),
                                         FALSE,
                                         FALSE,
-                                        FALSE);
+                                        FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::Number,
+                                '',
+                                0,
+                                '',
+                                '');
                                     EnterCell(
                                        RowNo + 1,
                                        5,
                                        Format(DetMovCli."Amount (LCY)", 0),
                                        FALSE,
                                        FALSE,
-                                       FALSE);
+                                       FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::Number,
+                                '',
+                                0,
+                                '',
+                                '');
                                     SaldoLinea += DetMovCli."Amount (LCY)";
                                 until rMovCli.NEXT = 0;
                                 RowNo += 1;
@@ -202,14 +337,28 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                    'Subtotal:',
                                    true,
                                    FALSE,
-                                   FALSE);
+                                   FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 1,
                                     5,
                                     Format(SaldoLinea, 0),
                                     true,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::Number,
+                                '',
+                                0,
+                                '',
+                                '');
                                 SaldoCli += SaldoLinea;
                             end;
                             rMovPro.CHANGECOMPANY(RxE.Empresa);
@@ -225,70 +374,140 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                    'Facturas emitidas por ' + Rec.Name + ' a ' + rEmp.Name,
                                    false,
                                    false,
-                                   false);
+                                   false,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     1,
                                     'FECHA',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     2,
                                     'FACTURA',
                                     TRUE,
                                     FALSE,
-                                    True);
+                                    True,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 11,
                                     3,
                                     'TOTAL',
                                     TRUE,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     3,
                                     'FACTURA',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 10,
                                     4,
                                     'IMPORTE',
                                     TRUE,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 11,
                                     4,
                                     'PENDIENTE',
                                     TRUE,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     4,
                                     'LIQUIDAR',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 11,
                                     5,
                                     'IMPORTE',
                                     TRUE,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 EnterCell(
                                     RowNo + 12,
                                     5,
                                     'LIQUIDADO',
                                     TRUE,
                                     FALSE,
-                                    true);
+                                    true,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                 RowNo += 12;
                                 SaldoLinea := 0;
                                 repeat
@@ -299,14 +518,28 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                        Format(rMovPro."Posting Date", 0, '<Day,2>/<Month,2>/<Year4>'),
                                        FALSE,
                                        FALSE,
-                                       FALSE);
+                                       FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                     EnterCell(
                                         RowNo + 1,
                                         2,
                                         rMovPro."External Document No.",
                                         FALSE,
                                         FALSE,
-                                        FALSE);
+                                        FALSE,
+                                false,
+                                '',
+                                TempExcelBuffer."Cell Type"::Text,
+                                '',
+                                0,
+                                '',
+                                '');
                                     DetMovPro.Reset();
                                     DetMovPro.ChangeCompany(RxE.Empresa);
                                     DetMovPro.SetRange(DetMovPro."Entry Type", DetMovPro."Entry Type"::"Initial Entry");
@@ -319,7 +552,15 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                         Format(DetMovPro."Amount (LCY)", 0),
                                         FALSE,
                                         FALSE,
-                                        FALSE);
+                                        FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::Number,
+                                '',
+                                0,
+                                '',
+                                '');
+
                                     DetMovPro.ChangeCompany(RxE.Empresa);
                                     DetMovPro.SetRange(DetMovPro."Entry Type");
                                     DetMovPro.SETRANGE("Vendor Ledger Entry No.", rMovPro."Entry No.");
@@ -331,14 +572,28 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                         Format(DetMovPro."Amount (LCY)", 0),
                                         FALSE,
                                         FALSE,
-                                        FALSE);
+                                        FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::Number,
+                                '',
+                                0,
+                                '',
+                                '');
                                     EnterCell(
                                        RowNo + 1,
                                        5,
                                        Format(DetMovPro."Amount (LCY)", 0),
                                        FALSE,
                                        FALSE,
-                                       FALSE);
+                                       FALSE,
+                                false,
+                                '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                TempExcelBuffer."Cell Type"::Number,
+                                '',
+                                0,
+                                '',
+                                '');
                                     SaldoLinea += DetMovPro."Amount (LCY)";
                                 until rMovPro.NEXT = 0;
                                 RowNo += 1;
@@ -348,14 +603,28 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                                     'Subtotal:',
                                     true,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                    false,
+                                    '',
+                                    TempExcelBuffer."Cell Type"::Text,
+                                    '',
+                                    0,
+                                    '',
+                                    '');
                                 EnterCell(
                                     RowNo + 1,
                                     5,
                                     Format(SaldoLinea, 0),
                                     true,
                                     FALSE,
-                                    FALSE);
+                                    FALSE,
+                                    false,
+                                    '_-* #,##0.00_-;-* #,##0.00_-;_-* "-"_-;_-@_-',
+                                    TempExcelBuffer."Cell Type"::Number,
+                                    '',
+                                    0,
+                                    '',
+                                    '');
                                 SaldoPro += SaldoLinea;
                             end;
                         UNTIL RxE.NEXT = 0;
@@ -366,7 +635,15 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                         'Esperamos merezcan su conformidad.',
                         FALSE,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        FALSE,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
+
                     //Aprovecho para notificarles que el saldo que mantenemos con ustedes a día de hoy, una vez aplicados 
                     EnterCell(
                         RowNo + 3,
@@ -374,7 +651,14 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                         'Aprovecho para notificarles que el saldo que mantenemos con ustedes a día de hoy, una vez aplicados',
                         FALSE,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        FALSE,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
                     //los intercambios que les hemos detallado arriba, asciende a 3.715,50  € a favor de Malla, S.A.
                     rEmp.ChangeCompany(CompanyName);
                     rEmp.Get();
@@ -385,7 +669,14 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                         'los intercambios que les hemos detallado arriba, asciende a ' + Format(Saldo) + ' € a favor de ' + rEmp.Name + '.',
                         FALSE,
                         FALSE,
-                        FALSE);
+                        FALSE,
+                        FALSE,
+                        '',
+                        TempExcelBuffer."Cell Type"::Text,
+                        '',
+                        0,
+                        '',
+                        '');
                     ficheros.Reset();
 
                     If ficheros.FindLast() then Secuencia := ficheros.Secuencia + 1 else Secuencia := 1;
@@ -399,7 +690,7 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
                     ficheros.CalcFields(Fichero);
                     ficheros.Fichero.CreateOutStream(ExcelStream);
                     TempExcelBuffer.CreateNewBook('Intercambio');
-                    TempExcelBuffer.WriteSheet('', '', '');
+                    TempExcelBuffer.WriteSheet('', '', '', Orientacion::Vertical);
                     TempExcelBuffer.CloseBook();
                     TempExcelBuffer.SetFriendlyFilename('Intercambio');
                     TempExcelBuffer.SaveToStream(ExcelStream, true);
@@ -416,19 +707,35 @@ pageextension 93002 Intercambioext extends "Ficha Intercambio"
             }
         }
     }
-    LOCAL PROCEDURE EnterCell(RowNo: Integer; ColumnNo: Integer; CellValue: Text[250]; Bold: Boolean; Italic: Boolean; UnderLine: Boolean);
-    BEGIN
-        TempExcelBuffer.INIT;
-        TempExcelBuffer.VALIDATE("Row No.", RowNo);
-        TempExcelBuffer.VALIDATE("Column No.", ColumnNo);
+    local procedure EnterCell(
+        RowNo: Integer;
+        ColumnNo: Integer;
+        CellValue: Text[250];
+        Bold: Boolean;
+        Italic: Boolean;
+        UnderLine: Boolean;
+        DobleUnderLine: Boolean;
+        NumberFormat: Text;
+        CellType: Option; Fuente: Text[30]; Tamaño: Integer; Color: Text; ColorFondo: Text)
+    begin
+        TempExcelBuffer.Init();
+        TempExcelBuffer.Validate("Row No.", RowNo);
+        TempExcelBuffer.Validate("Column No.", ColumnNo);
         TempExcelBuffer."Cell Value as Text" := CellValue;
         TempExcelBuffer.Formula := '';
         TempExcelBuffer.Bold := Bold;
         TempExcelBuffer.Italic := Italic;
         TempExcelBuffer.Underline := UnderLine;
-        TempExcelBuffer.INSERT;
-    END;
+        TempExcelBuffer."Double Underline" := DobleUnderLine;
+        TempExcelBuffer.NumberFormat := NumberFormat;
+        TempExcelBuffer."Cell Type" := CellType;
+        TempExcelBuffer."Font Name" := Fuente;
+        TempExcelBuffer."Font Size" := Tamaño;
+        TempExcelBuffer."Font Color" := Color;
+        TempExcelBuffer."Background Color" := ColorFondo;
+        TempExcelBuffer.Insert();
+    end;
 
     var
-        TempExcelBuffer: Record "Excel Buffer" temporary;
+        TempExcelBuffer: Record "Excel Buffer 2" temporary;
 }

@@ -263,6 +263,11 @@ table 7001240 Informes
         {
 
         }
+        field(31; Orientación; Enum Orientacion)
+        {
+            Caption = 'Orientación';
+            DataClassification = ToBeClassified;
+        }
 
 
     }

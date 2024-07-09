@@ -77,9 +77,23 @@ table 7001244 "Columnas Informes"
             caption = 'Titulo';
             DataClassification = ToBeClassified;
             trigger OnValidate()
+            var
+                Self: Record "Columnas Informes";
+                a: Integer;
             begin
-                if Titulo <> '' then
+                if Titulo <> '' then begin
+                    if Orden = 0 then begin
+                        Self.SetRange(Self."Id", "Id");
+                        Self.SetRange(Include, true);
+                        if Self.Findset then
+                            repeat
+                                if Self.Orden > a then a := Self.Orden;
+                            until Self.Next = 0;
+                        Validate(Orden, a + 1);
+                    end;
                     Include := true;
+
+                end;
             end;
         }
         field(4; Orden; Integer)
@@ -87,11 +101,23 @@ table 7001244 "Columnas Informes"
             caption = 'Orden';
             DataClassification = ToBeClassified;
             trigger OnValidate()
+            var
+                Self: Record "Columnas Informes";
             begin
+                Letra := '';
+                Mostrar := Mostrar::"No";
                 if Orden = 0 then
                     Include := false
-                else
+                else begin
                     Include := true;
+                    Mostrar := Mostrar::" ";
+                    Letra := LetraColumna(Orden);
+                    Self.SetRange(Self."Id", "Id");
+                    Self.SetRange(Self.Orden, Orden);
+                    Self.SetFilter(Id_campo, '<>%1', Id_campo);
+                    if Self.FindFirst() then
+                        error('El orden ya existe en la lista de columnas');
+                end;
             end;
         }
         field(5; Funcion; Enum Funciones)
@@ -100,14 +126,50 @@ table 7001244 "Columnas Informes"
             DataClassification = ToBeClassified;
 
         }
+        field(12; Letra; Code[2])
+        {
+            caption = 'Letra';
+            DataClassification = ToBeClassified;
+            trigger OnValidate()
+            var
+                x: Integer;
+                i: Integer;
+                C: Integer;
+            begin
+                Letra := UpperCase(Letra);
+                for i := 1 to strlen(Letra) do begin
+                    x := Letra[i];
+                    if (x < 65) or (x > 90) then
+                        error('Solo se permiten letras mayúsculas de la A a la Z');
+                    C := C + x - 64 + (25 * (i - 1));
+                end;
+                Validate(Orden, C);
+
+            end;
+        }
         field(6; Include; Boolean)
         {
             caption = 'Incluir';
             DataClassification = ToBeClassified;
             trigger OnValidate()
+            var
+                Self: Record "Columnas Informes";
+                a: Integer;
             begin
                 if not Include then
-                    Orden := 0;
+                    Validate(Orden, 0)
+                else begin
+                    if Orden = 0 then begin
+                        Self.SetRange(Self."Id", "Id");
+                        Self.SetRange(Include, true);
+                        if Self.Findset then
+                            repeat
+                                if Self.Orden > a then a := Self.Orden;
+                            until Self.Next = 0;
+                        Validate(Orden, a + 1);
+                    end;
+                end;
+
             end;
         }
         field(7; "Field Name"; Text[250])
@@ -130,6 +192,15 @@ table 7001244 "Columnas Informes"
             caption = 'Ancho Columna';
             DataClassification = ToBeClassified;
         }
+        field(11; "Formato Columna"; Text[250])
+        {
+            caption = 'Formato Columna';
+            DataClassification = ToBeClassified;
+        }
+        field(13; Mostrar; Option)
+        {
+            OptionMembers = " ","No";
+        }
 
 
 
@@ -143,6 +214,7 @@ table 7001244 "Columnas Informes"
         {
             Clustered = true;
         }
+
 
     }
     procedure GetColumnsTemp(var Columnas: Record "Columnas Informes" temporary)
@@ -251,5 +323,127 @@ table 7001244 "Columnas Informes"
         OdataColumnChose: Page "OData Column Choose SubForm";
 }
 //Page para filttros informes
+table 7001246 "Formato Columnas"
+{
+    DrillDownPageId = "Formato Columnas";
+    fields
+    {
+        field(1; Id; Integer)
+        {
+            caption = 'Id';
+            DataClassification = ToBeClassified;
+        }
+        field(2; Orden; Integer)
+        {
+            caption = 'Id';
+            DataClassification = ToBeClassified;
+        }
+
+        field(22; Letra; Code[2])
+        {
+            caption = 'Letra';
+            DataClassification = ToBeClassified;
+            trigger OnValidate()
+            begin
+                Letra := LetraColumna(Orden);
+            end;
+        }
+        field(3; Cabecera; Boolean)
+        {
+            caption = 'Cabecera';
+            DataClassification = ToBeClassified;
+
+        }
+
+        field(4; "Id_campo"; Integer)
+        {
+            caption = 'Id_campo';
+            AutoIncrement = true;
+        }
+        field(5; "Bold"; Boolean)
+        {
+            caption = 'Negrita';
+            DataClassification = ToBeClassified;
+        }
+        field(6; "Italic"; Boolean)
+        {
+            caption = 'Cursiva';
+            DataClassification = ToBeClassified;
+        }
+        field(7; "Underline"; Boolean)
+        {
+            caption = 'Subrayado';
+            DataClassification = ToBeClassified;
+        }
+        field(8; "Double Underline"; Boolean)
+        {
+            caption = 'Doble Subrayado';
+            DataClassification = ToBeClassified;
+        }
 
 
+        field(11; "Formato Columna"; Text[250])
+        {
+            caption = 'Formato Columna';
+            DataClassification = ToBeClassified;
+        }
+        field(12; Fuente; Text[250])
+        {
+            caption = 'Fuente';
+            DataClassification = ToBeClassified;
+        }
+        field(13; Tamaño; Integer)
+        {
+            caption = 'Tamaño';
+            DataClassification = ToBeClassified;
+        }
+        field(14; "Color Fuente"; Text[30])
+        {
+            caption = 'Color';
+            DataClassification = ToBeClassified;
+
+        }
+        field(15; "Color Fondo"; Text[30])
+        {
+            caption = 'Color Fondo';
+            DataClassification = ToBeClassified;
+
+        }
+    }
+    keys
+    {
+        key(PK; Id, Id_Campo, Cabecera)
+        {
+            Clustered = true;
+        }
+
+    }
+    Procedure LetraColumna(Columna: integer) xlColID: Text
+    var
+        x: Integer;
+        i: Integer;
+        y: Integer;
+        c: Char;
+        t: Text[30];
+    begin
+        xlColID := '';
+        x := Columna;
+        while x > 26 do begin
+            y := x mod 26;
+            if y = 0 then
+                y := 26;
+            c := 64 + y;
+            i := i + 1;
+            t[i] := c;
+            x := (x - y) div 26;
+        end;
+        if x > 0 then begin
+            c := 64 + x;
+            i := i + 1;
+            t[i] := c;
+        end;
+        for x := 1 to i do
+            xlColID[x] := t[1 + i - x];
+        exit(xlColID);
+    end;
+}

@@ -384,6 +384,7 @@ page 7001193 "Informes Setup Wizard"
                 trigger OnAction()
                 var
                     ListaFiltros: Page "Lista Filtros Informes";
+                    ColumnaTemp: Record "Columnas Informes" temporary;
                 begin
                     Clear(ChangeFields);
                     ChangeFields := CurrPage.ODataColSubForm.PAGE.IncludeIsChanged();
@@ -392,6 +393,11 @@ page 7001193 "Informes Setup Wizard"
                         TempTenantWebServiceFilter.DeleteAll();
                     end;
                     ListaFiltros.CargarDatos(TempTenantWebServiceFilter);
+                    if TempTenantWebServiceColumns.table = 0 Then begin
+                        Rec.InitDefaultColumns();
+                        Rec.GetColumnsTemp(TempTenantWebServiceColumns);
+
+                    end;
                     ListaFiltros.CargaTabla(TempTenantWebServiceColumns.Table);
                     ListaFiltros.RunModal();
                     ListaFiltros.DesCargarDatos(TempTenantWebServiceFilter);
@@ -797,6 +803,7 @@ page 7001193 "Informes Setup Wizard"
             until TempTenantWebServiceFilter.Next() = 0;
             PublishFlag := true;
         end;
+        Commit();
     end;
 
 

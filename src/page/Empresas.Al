@@ -21,6 +21,10 @@ page 7001187 "Empresas Informes"
                 {
                     ApplicationArea = All;
                 }
+                field("Incluir"; Rec."Incluir")
+                {
+                    ApplicationArea = All;
+                }
                 field("Hojas Separadas"; Rec."Hojas Separadas")
                 {
                     ApplicationArea = All;

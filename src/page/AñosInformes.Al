@@ -34,7 +34,7 @@ page 7001186 "Años Informes"
                 {
                     ApplicationArea = All;
                 }
-                field(Semama; Rec.Semana)
+                field(Semana; Rec.Semana)
                 {
                     ApplicationArea = All;
                 }
@@ -55,7 +55,7 @@ page 7001186 "Años Informes"
                 {
                     ApplicationArea = All;
                 }
-                field("Semama 2"; Rec.Semana2)
+                field("Semana 2"; Rec.Semana2)
                 {
                     ApplicationArea = All;
                 }

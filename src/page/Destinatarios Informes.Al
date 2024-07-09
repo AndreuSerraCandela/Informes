@@ -81,6 +81,7 @@ page 7001189 "Lista Destinatarios Informes"
         {
             repeater(Repeater)
             {
+
                 field("Id"; Rec."Id")
                 {
                     ApplicationArea = All;
@@ -93,23 +94,13 @@ page 7001189 "Lista Destinatarios Informes"
                 {
                     ApplicationArea = All;
                 }
-
-                field("Campo Destinatario"; CampoInformes)
+                field("Nombre Informe"; Rec."Nombre Informe")
                 {
-
                     ApplicationArea = All;
-                    trigger OnLookup(var Text: Text): Boolean
-                    var
-                        Campos: Record Field;
-                    begin
-                        Campos.SetRange(Campos.TableNo, TableId);
-                        If Page.Runmodal(9806, Campos) = Action::LookupOK then begin
-                            Rec."Campo Destinatario" := Campos."No.";
-                            CampoInformes := Rec."Campo Destinatario";
-                            exit(true);
-                        end;
-                        exit(false);
-                    end;
+                }
+
+                field("Campo Destinatario"; Rec."Campo Destinatario")
+                {
 
 
                 }
@@ -121,10 +112,11 @@ page 7001189 "Lista Destinatarios Informes"
                 {
 
                 }
-                field("Nombre Informe"; Rec."Nombre Informe")
+                field("No enviar"; Rec."No enviar")
                 {
                     ApplicationArea = All;
                 }
+
 
             }
         }
@@ -142,17 +134,25 @@ page 7001189 "Lista Destinatarios Informes"
 
     procedure NombreCampo(): Text
     var
-
+        Columna: Record "Columnas Informes";
+        Informes: Record "Informes";
         Campos: Record Field;
     begin
         if Rec."Campo Destinatario" = 0 then
             exit('');
-
-        Campos.SetRange(tableno, TableId);
-        Campos.SetRange("No.", Rec."Campo Destinatario");
-        If Campos.FindFirst then
-            exit(Campos."Field Caption");
-
+        if Informes.Get(Rec.Id) then begin
+            Columna.SetRange(Columna."Id", Informes."Id");
+            If not Columna.FindFirst() then begin
+                Informes.InitDefaultColumns();
+                Informes.GetColumns(Informes);
+                Commit();
+                Columna.FindFirst();
+            end;
+            Campos.SetRange(tableno, Columna.Table);
+            Campos.SetRange("No.", Rec."Campo Destinatario");
+            If Campos.FindFirst then
+                exit(Campos."Field Caption");
+        end;
     end;
 
     Procedure CargaTabla(PTableId: Integer)
