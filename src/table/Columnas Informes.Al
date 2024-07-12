@@ -214,6 +214,10 @@ table 7001244 "Columnas Informes"
         {
             Clustered = true;
         }
+        key(Mostrar; Mostrar, Orden)
+        {
+
+        }
 
 
     }
