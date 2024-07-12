@@ -16,6 +16,10 @@ page 7001196 "Destinatarios Informes"
                 {
                     ApplicationArea = All;
                 }
+                field("Nombre Empleado"; Rec."Nombre Empleado")
+                {
+                    ApplicationArea = All;
+                }
                 field("e-mail"; Rec."e-mail")
                 {
                     ApplicationArea = All;

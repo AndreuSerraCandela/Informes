@@ -20,7 +20,8 @@ table 7001241 "Destinatarios Informes"
             begin
                 if Employee.Get(Empleado)
                  then
-                    "e-mail" := Employee."Company E-Mail";
+                    "Nombre Empleado" := Employee.Name;
+                "e-mail" := Employee."Company E-Mail";
                 If "e-mail" = '' Then Message('El empleado no tiene correo electrónico');
             end;
         }
@@ -68,6 +69,11 @@ table 7001241 "Destinatarios Informes"
         field(7; "No enviar"; Boolean)
         {
             caption = 'No enviar';
+            DataClassification = ToBeClassified;
+        }
+        field(8; "Nombre Empleado"; Text[250])
+        {
+            caption = 'Nombre Empleado';
             DataClassification = ToBeClassified;
         }
 

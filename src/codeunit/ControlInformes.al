@@ -102,7 +102,7 @@ Codeunit 7001130 ControlInformes
                             ficheros.Fichero.CreateInStream(Intstream);
                             DownloadFromStream(Intstream, 'Guardar', 'C:\Temp', 'ALL Files (*.*)|*.*', ficheros."Nombre fichero");
                         end else
-                            EnviaCorreoComercial(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID");
+                            EnviaCorreo(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado");
                     // end;
                     until Destinatario.Next() = 0;
                 end;
@@ -120,7 +120,14 @@ Codeunit 7001130 ControlInformes
         end;
     end;
 
-    local procedure EnviaCorreoComercial(SalesPersonMail: Text; var ficheros: Record Ficheros; Informe: Text; InformeDestinatario: Text; IdInforme: Integer)
+    procedure StrReplace(String: Text[250]; FindWhat: Text[250]; ReplaceWith: Text[250]) NewString: Text[250]
+    begin
+        WHILE STRPOS(String, FindWhat) > 0 DO
+            String := DELSTR(String, STRPOS(String, FindWhat)) + ReplaceWith + COPYSTR(String, STRPOS(String, FindWhat) + STRLEN(FindWhat));
+        NewString := String;
+    end;
+
+    local procedure EnviaCorreo(SalesPersonMail: Text; var ficheros: Record Ficheros; Informe: Text; InformeDestinatario: Text; IdInforme: Integer; NomBreDestinatario: Text)
 
 
     var
@@ -137,17 +144,43 @@ Codeunit 7001130 ControlInformes
         Secuencia: Integer;
         Informes: Record "Informes";
         workdescription: Text;
+        Saludo: Text;
     begin
         rInf.Get();
-        BigText := ('Estimado:');
-
+        workdescription := Informes.GetDescripcionAmpliada();
         if InformeDestinatario <> '' then
             Informe := ConvertStr(InformeDestinatario, ' ', '_') + '_' + Format(Today(), 0, '<Year4><Month,2><Day,2>');
+        if Time < 140000T then
+            Saludo := 'Buenos días'
+        else if Time < 200000T then
+            Saludo := 'Buenas tardes'
+        else
+            Saludo := 'Buenas noches';
+        if workdescription <> '' then begin
+            //#Saludo #Nombreempleado, Ajduntamos el siguiente informe: #Nombre informe
+            If StrPos(workdescription, '#Nombreempleado') > 0 then
+                workdescription := StrReplace(workdescription, '#Nombreempleado', NomBreDestinatario)
+            else begin
+                BigText := ('Estimado:');
+                BigText := BigText + '<br> </br>';
+                BigText := BigText + '<br> </br>';
+            end;
+            If StrPos(workdescription, '#Nombreinforme') > 0 then
+                workdescription := StrReplace(workdescription, '#Nombreinforme', InformeDestinatario);
+            if StrPos(workdescription, '#Saludo') > 0 then
+                workdescription := StrReplace(workdescription, '#Saludo', Saludo);
+        end else begin
+            BigText := ('Estimado:');
+            BigText := BigText + '<br> </br>';
+            BigText := BigText + '<br> </br>';
+        end;
+
+
         //(FORMAT(cr,0,'<CHAR>') + FORMAT(lf,0,'<CHAR>')
-        BigText := BigText + '<br> </br>';
-        BigText := BigText + '<br> </br>';
+
         Informes.get(IdInforme);
-        workdescription := Informes.GetDescripcionAmpliada();
+
+
         if workdescription = '' then
             BigText := BigText + 'Adjuntamos el Informe: ' + Informe;
 
