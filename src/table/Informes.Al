@@ -46,12 +46,13 @@ table 7001240 Informes
             trigger OnLookup()
             begin
                 Validate("Earliest Start Date/Time", LookupDateTime("Earliest Start Date/Time", 0DT, "Expiration Date/Time"));
+
             end;
 
             trigger OnValidate()
             begin
                 CheckStartAndExpirationDateTime();
-
+                "Fecha Próx. Ejecución" := DT2Date("Earliest Start Date/Time");
             end;
         }
         field(8; "Expiration Date/Time"; DateTime)
@@ -266,6 +267,16 @@ table 7001240 Informes
         field(31; Orientación; Enum Orientacion)
         {
             Caption = 'Orientación';
+            DataClassification = ToBeClassified;
+        }
+        field(32; "Fecha Últ. Ejecución"; Date)
+        {
+            Caption = 'Fecha Última Ejecución';
+            DataClassification = ToBeClassified;
+        }
+        field(33; "Fecha Próx. Ejecución"; Date)
+        {
+            Caption = 'Fecha Último Ejecución';
             DataClassification = ToBeClassified;
         }
 
@@ -504,6 +515,7 @@ table 7001240 Informes
         NoOfExtraDays: Integer;
         NoOfDays: Integer;
         Found: Boolean;
+        ACro: Boolean;
     begin
         with JobQueueEntry do begin
             //TestField("Recurring Job");
@@ -515,8 +527,13 @@ table 7001240 Informes
             RunOnDate[6] := "Run on Saturdays";
             RunOnDate[7] := "Run on Sundays";
             NewRunDateTime := StartingDateTime;
+            if "Ending Time" = 0T then begin
+                ACro := true;
+                "Ending Time" := "Starting Time";
+            end;
+
             NoOfDays := 0;
-            if ("Ending Time" <> 0T) and (NewRunDateTime > GetEndingDateTime(NewRunDateTime)) then begin
+            if ("Ending Time" <> 0T) and (NewRunDateTime >= GetEndingDateTime(NewRunDateTime)) then begin
                 NewRunDateTime := GetStartingDateTime(NewRunDateTime);
                 NoOfDays := NoOfDays + 1;
             end;
@@ -541,6 +558,8 @@ table 7001240 Informes
 
             if Found then
                 NewRunDateTime := CreateDateTime(DT2Date(NewRunDateTime) + NoOfDays, DT2Time(NewRunDateTime));
+            If ACro then
+                "Ending Time" := 0T;
         end;
 
 

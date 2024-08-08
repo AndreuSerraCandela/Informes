@@ -29,15 +29,7 @@ enum 7001191 Funciones
     value(16; "Columna") { Caption = 'Columna'; }
 
 }
-enumextension 90144 EnumEscenarioInformes extends "Email Scenario"
-{
-    value(90003; Informes)
-    {
-        Caption = 'Informes';
-    }
 
-
-}
 enum 7001192 Orientacion
 {
     value(0; "Vertical") { }

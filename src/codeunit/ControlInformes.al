@@ -2,9 +2,8 @@ Codeunit 7001130 ControlInformes
 {
     trigger OnRun()
     var
-
+        informes: Record "Informes";
     begin
-
         imprimirInformes(0, CurrentDateTime, false);
     end;
 
@@ -24,6 +23,8 @@ Codeunit 7001130 ControlInformes
         MillisecondsToAdd: Integer;
         NoOfMinutes: Integer;
         Intstream: InStream;
+        HoraInicio: Boolean;
+        HoraFin: Boolean;
     begin
         NoOfMinutes := 5;
         MillisecondsToAdd := NoOfMinutes;
@@ -31,91 +32,98 @@ Codeunit 7001130 ControlInformes
         If IdInforme <> 0 tHEN
             Informe.SetRange("ID", IdInforme);
         If ProximaFecha <> 0DT tHEN
-            Informe.SetRange("Earliest Start Date/Time", CurrentDateTime - MillisecondsToAdd, CurrentDateTime + MillisecondsToAdd);
+            Informe.SetRange("Fecha Próx. Ejecución", Today);
         Informe.SetRange(Ejecutandose, false);
 
         If Informe.FindSet() then begin
             repeat
-                Informe.Ejecutandose := true;
-                Informe.Modify();
-                Commit();
-                Destinatario.Reset;
-                Destinatario.SetRange("No enviar", false);
-                Destinatario.SetRange("ID", Informe."ID");
-                if Destinatario.FindSet() then begin
-                    repeat
-                        Filtros.Reset;
-                        Filtros.SetRange("ID", Informe."ID");
-                        if Not Filtros.FindSet() then Filtros.Init;
-                        ficheros.Reset();
-                        If ficheros.FindLast() then Secuencia := ficheros.Secuencia + 1 else Secuencia := 1;
-                        ficheros.Secuencia := Secuencia;
-                        ficheros."Nombre fichero" := Informe.Descripcion + '.xlsx';
-                        ficheros.Proceso := 'ENVIARXLS';
-                        repeat
-                            ficheros.Secuencia := Secuencia;
-                            Secuencia += 1;
-                        Until ficheros.Insert();
-                        ficheros.CalcFields(Fichero);
-                        ficheros.Fichero.CreateOutStream(out);
-                        case Informe.Informe Of
-                            Informes::"Contratos x Empresa":
-                                begin
-                                    Clear(Contratos);
-                                    Contratos.ExportExcel(Filtros, Destinatario, out);
-                                end;
-                            informes::"Estadisticas Contabilidad":
-                                begin
-                                    Clear(Conta);
-                                    Conta.ExportExcel(Filtros, Destinatario, out);
-                                end;
-                            Informes::Tablas:
-                                begin
-                                    ExportExcel(Filtros, Destinatario, out);
-                                end;
-                            Informes::"Web Service":
-                                begin
+                HoraInicio := (Informe."Starting Time" <= Time);
+                HoraFin := ((Informe."Ending Time" = 0T) or (Informe."Ending Time" >= Time));
+                If (HoraInicio and HoraFin) Or (ProximaFecha = 0DT) then begin
+                    If (Enhora(Informe."Earliest Start Date/Time", CurrentDateTime) or (ProximaFecha = 0DT)) then begin
+                        Informe.Ejecutandose := true;
+                        Informe."Fecha Últ. Ejecución" := Today;
+                        Informe.Modify();
+                        Commit();
+                        Destinatario.Reset;
+                        Destinatario.SetRange("No enviar", false);
+                        Destinatario.SetRange("ID", Informe."ID");
+                        if Destinatario.FindSet() then begin
+                            repeat
+                                Filtros.Reset;
+                                Filtros.SetRange("ID", Informe."ID");
+                                if Not Filtros.FindSet() then Filtros.Init;
+                                ficheros.Reset();
+                                If ficheros.FindLast() then Secuencia := ficheros.Secuencia + 1 else Secuencia := 1;
+                                ficheros.Secuencia := Secuencia;
+                                ficheros."Nombre fichero" := Informe.Descripcion + '.xlsx';
+                                ficheros.Proceso := 'ENVIARXLS';
+                                repeat
+                                    ficheros.Secuencia := Secuencia;
+                                    Secuencia += 1;
+                                Until ficheros.Insert();
+                                ficheros.CalcFields(Fichero);
+                                ficheros.Fichero.CreateOutStream(out);
+                                case Informe.Informe Of
+                                    Informes::"Contratos x Empresa":
+                                        begin
+                                            Clear(Contratos);
+                                            Contratos.ExportExcel(Filtros, Destinatario, out);
+                                        end;
+                                    informes::"Estadisticas Contabilidad":
+                                        begin
+                                            Clear(Conta);
+                                            Conta.ExportExcel(Filtros, Destinatario, out);
+                                        end;
+                                    Informes::Tablas:
+                                        begin
+                                            ExportExcel(Filtros, Destinatario, out);
+                                        end;
+                                    Informes::"Web Service":
+                                        begin
 
-                                    if ExportExcelWeb(Filtros, Destinatario, out) = 'Retry' then begin
-                                        //RecReftemp.Close();
-                                        ExportExcelWeb(Filtros, Destinatario, out);
-                                    end;
+                                            if ExportExcelWeb(Filtros, Destinatario, out) = 'Retry' then begin
+                                                //RecReftemp.Close();
+                                                ExportExcelWeb(Filtros, Destinatario, out);
+                                            end;
+
+                                        end;
+                                    Informes::"Informes Financieros":
+                                        begin
+                                            Clear(Panrorama);
+                                            Panrorama.ExportExcel(Filtros, Destinatario, out);
+
+                                        end;
+                                    Informes::"Saldo InterEmpresas":
+                                        begin
+                                            Clear(Saldo);
+                                            Saldo.ExportExcel(Filtros, Destinatario, out);
+                                        end;
 
                                 end;
-                            Informes::"Informes Financieros":
-                                begin
-                                    Clear(Panrorama);
-                                    Panrorama.ExportExcel(Filtros, Destinatario, out);
+                                ficheros.Modify();
+                                Commit();
+                                if NoEnviar then begin
+                                    ficheros.CalcFields(Fichero);
+                                    ficheros.Fichero.CreateInStream(Intstream);
+                                    DownloadFromStream(Intstream, 'Guardar', 'C:\Temp', 'ALL Files (*.*)|*.*', ficheros."Nombre fichero");
+                                end else
+                                    EnviaCorreo(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado");
+                            //end;
+                            until Destinatario.Next() = 0;
+                        end;
+                        IF ProximaFecha <> 0DT tHEN begin
+                            ProximaFecha := CurrentDateTime + MillisecondsToAdd;
 
-                                end;
-                            Informes::"Saldo InterEmpresas":
-                                begin
-                                    Clear(Saldo);
-                                    Saldo.ExportExcel(Filtros, Destinatario, out);
-                                end;
+                            Informe."Earliest Start Date/Time" := Informe.CalcNextRunTimeForRecurringReport(Informe, ProximaFecha);
+                            If (Informe."Ending Time" = 0T) Or (Time > Informe."Ending Time") then
+                                Informe."Fecha Próx. Ejecución" := DT2Date(Informe."Earliest Start Date/Time");
 
                         end;
-                        ficheros.Modify();
-                        Commit();
-                        if NoEnviar then begin
-                            ficheros.CalcFields(Fichero);
-                            ficheros.Fichero.CreateInStream(Intstream);
-                            DownloadFromStream(Intstream, 'Guardar', 'C:\Temp', 'ALL Files (*.*)|*.*', ficheros."Nombre fichero");
-                        end else
-                            EnviaCorreo(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado");
-                    // end;
-                    until Destinatario.Next() = 0;
+                        Informe.Ejecutandose := false;
+                        Informe.Modify;
+                    end;
                 end;
-                IF ProximaFecha <> 0DT tHEN begin
-                    ProximaFecha := CurrentDateTime + MillisecondsToAdd;
-
-                    Informe."Earliest Start Date/Time" := Informe.CalcNextRunTimeForRecurringReport(Informe, ProximaFecha);
-
-
-                end;
-                Informe.Ejecutandose := false;
-                Informe.Modify;
-
             until Informe.Next() = 0;
         end;
     end;
@@ -793,7 +801,7 @@ Codeunit 7001130 ControlInformes
                                 FieldT::Date:
                                     begin
 
-                                        EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
+                                        //EnterCell(TempExcelBuffer, Row, Campos.Orden, Valor, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo");
                                         iF Fecha <> 0D then
                                             EnterCell(TempExcelBuffer, Row, Campos.Orden, CopyStr(TypeHelper.FormatDateWithCurrentCulture(Fecha), 1, 250), Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", Formatos."Formato Columna", TempExcelBuffer."Cell Type"::Date, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo")
                                         else
@@ -1192,6 +1200,17 @@ Codeunit 7001130 ControlInformes
         If Empresas.FindFirst() then
             If Empresas."Columna Excel" <> 0 then
                 EnterCell(TempExcelBuffer, Row, Empresas."Columna Excel", 'Empresa', true, false, false, false, '', TempExcelBuffer."Cell Type"::Text, '', 0, '', '');
+    end;
+
+    local procedure Enhora(EarliestStartDateTime: DateTime; CurrentDateTime: DateTime): Boolean
+    begin
+        If EarliestStartDateTime = 0DT then
+            exit(true);
+        //Permite un margen de 5 minutos de diferencia
+        if Abs(CurrentDateTime - EarliestStartDateTime) > 300000 then
+            exit(false)
+        else
+            exit(true);
     end;
 
 

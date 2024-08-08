@@ -315,6 +315,19 @@ page 7001195 "Informes Card"
                 end;
             }
 
+            action(Lanzar)
+            {
+                ApplicationArea = All;
+                Image = ExecuteAndPostBatch;
+                Caption = 'Lanzar';
+                trigger OnAction()
+                var
+                    Informes: Codeunit ControlInformes;
+                begin
+                    Informes.Run();// Código para imprimir informe
+                end;
+            }
+
             action("Importar Plantilla")
             {
                 ApplicationArea = All;
