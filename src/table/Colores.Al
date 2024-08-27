@@ -124,7 +124,7 @@ table 7001238 Colores
     var
         Colores: Record "Colores";
     begin
-        if Colores.Get(Code) then
+        if Colores.Get(BrandColorCode) then
             exit;
         Colores.Code := BrandColorCode;
         Colores.Name := BrandColorName;

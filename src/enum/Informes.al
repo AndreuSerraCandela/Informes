@@ -6,6 +6,7 @@ enum 7001190 Informes
     value(3; "Web Service") { }
     value(4; "Informes Financieros") { }
     value(5; "Saldo InterEmpresas") { }
+    value(6; "Ingresos Anticipados") { }
 }
 enum 7001191 Funciones
 {
@@ -27,6 +28,11 @@ enum 7001191 Funciones
     value(14; "Diferencia") { Caption = 'Diferencia'; }
     value(15; "GetTotContNew") { Caption = 'Total Contrato o Total Facturado'; }
     value(16; "Columna") { Caption = 'Columna'; }
+    value(17; "Diferencia 485") { Caption = 'Diferencia 485'; }
+    value(18; "Cadena") { Caption = 'Cadena'; }
+    value(19; HiperVinculo) { Caption = 'HiperVinculo'; }
+
+
 
 }
 

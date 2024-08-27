@@ -152,6 +152,11 @@ table 7001239 "Excel Buffer 2"
             caption = 'Color Fondo';
             DataClassification = ToBeClassified;
         }
+        field(23; Vinculo; Text[1024])
+        {
+
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys
@@ -552,7 +557,7 @@ table 7001239 "Excel Buffer 2"
                     CloseBook();
                     Error(Text035)
                 end;
-                if ExcelBuffer.Formula = '' then
+                if (ExcelBuffer.Formula = '') then
                     WriteCellValueInternal(ExcelBuffer)
                 else
                     WriteCellFormula(ExcelBuffer)
@@ -573,8 +578,12 @@ table 7001239 "Excel Buffer 2"
     begin
         with ExcelBuffer do begin
             GetCellDecorator(Bold, Italic, Underline, "Double Underline", "Font Name", "Font Size", "Font Color", "Background Color", Decorator);
-
             CellTextValue := "Cell Value as Text";
+            if Vinculo <> '' then begin
+                If StrPos(Vinculo, 'http://NAV-MALLA01:48900') <> 0 then
+                    Vinculo := 'https://bc220.malla.es/' + CopyStr(Vinculo, 26);
+                XlWrkShtWriter.AddHyperlink("Row No.", xlColID, Vinculo);
+            end;
 
             if "Cell Value as Blob".HasValue() then begin
                 CalcFields("Cell Value as Blob");
@@ -607,6 +616,7 @@ table 7001239 "Excel Buffer 2"
     var
         Decorator: DotNet CellDecorator;
         IsHandled: Boolean;
+
     begin
         IsHandled := false;
         OnBeforeWriteCellFormula(Rec, ExcelBuffer, IsHandled);
@@ -615,7 +625,29 @@ table 7001239 "Excel Buffer 2"
 
         with ExcelBuffer do begin
             GetCellDecorator(Bold, Italic, Underline, "Double Underline", "Font Name", "Font Size", "Font Color", "Background Color", Decorator);
+            if (Vinculo <> '') And (Formula <> '') then
+                XlWrkShtWriter.AddHyperlink("Row No.", xlColID, Vinculo)
+            else begin
+                If Vinculo <> '' then begin
+                    If StrPos(Vinculo, 'http://NAV-MALLA01:48900') <> 0 then
+                        Vinculo := 'https://bc220.malla.es/' + CopyStr(Vinculo, 26);
+                    XlWrkShtWriter.AddHyperlink("Row No.", xlColID, Vinculo);
+                    //http://NAV-MALLA01:48900 https://bc220.malla.es/
+                    // If StrPos(Vinculo, 'http://NAV-MALLA01:48900') <> 0 then
+                    //     Vinculo := 'https://bc220.malla.es/' + CopyStr(Vinculo, 26);
+                    // Case "Cell Type" of
+                    //     "Cell Type"::Number:
+                    //         Formula := StrSubstNo('HYPERLINK("%1",%2)', Vinculo, "Cell Value as Text");
+                    //     "Cell Type"::Text:
+                    //         Formula := StrSubstNo('HYPERLINK("%1","%2")', Vinculo, "Cell Value as Text");
+                    //     "Cell Type"::Date:
+                    //         Formula := StrSubstNo('HYPERLINK("%1",%2)', Vinculo, "Cell Value as Text");
+                    //     "Cell Type"::Time:
+                    //         Formula := StrSubstNo('HYPERLINK("%1",%2)', Vinculo, "Cell Value as Text");
+                    // end;
 
+                end;
+            end;
             XlWrkShtWriter.SetCellFormula("Row No.", xlColID, GetFormula(), NumberFormat, Decorator);
         end;
     end;
@@ -640,6 +672,7 @@ table 7001239 "Excel Buffer 2"
         StringValue: DotNet StringValue;
         ownerXML: DotNet String;
     begin
+
         if IsBold and IsItalic then begin
             if IsDoubleUnderlined then begin
                 Decorator := XlWrkShtWriter.DefaultBoldItalicDoubleUnderlinedCellDecorator;
@@ -720,6 +753,7 @@ table 7001239 "Excel Buffer 2"
             end;
             Decorator.Font := DotNetFont;
         end;
+
         If BackgroundColor <> '' then begin
             Fill := Decorator.Fill.CloneNode(true);
             ownerXML := '<x:patternFill xmlns:x="http://schemas.openxmlformats.org/spreadsheetml/2006/main" patternType="solid">' + '<x:fgColor rgb="' + BackgroundColor + '" /></x:patternFill>';
@@ -1193,6 +1227,12 @@ table 7001239 "Excel Buffer 2"
     begin
         CurrentRow := NewCurrentRow;
         CurrentCol := NewCurrentCol;
+    end;
+
+    local procedure AddHyperLink(Link: Text[250])
+    begin
+
+        XlWrkShtWriter.AddHyperlink("Row No.", xlColID, Link);
     end;
 
     procedure CreateValidationRule(Range: Code[20])

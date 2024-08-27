@@ -1,7 +1,9 @@
 pageextension 93001 MovContaExt extends "MovContabilidad"
 {
 
-    procedure ExportExcel(var Filtros: Record "Filtros Informes"; Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
+    procedure ExportExcel(var Filtros: Record "Filtros Informes";
+    IdInforme: Integer;
+    Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
     var
         TempExcelBuffer: Record "Excel Buffer 2" temporary;
         ContabilidadLblEP: Label 'Movs. contabilidad';
@@ -46,7 +48,7 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
         RecRef.Open(17, true);
         RecReftemp.Open(17, true);
 
-        Informes.Get(Filtros.Id);
+        Informes.Get(IdInforme);
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
         if Destinatario."Nombre Informe" <> '' then
             ExcelFileNameEPR := ConvertStr(Destinatario."Nombre Informe", ' ', '_');
@@ -162,6 +164,11 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
                                             FieldT := FieldType::Text;
                                             Valor := Cliente_Proveedor(RecrefTemp.Field(Rec.FieldNo("Source No.")).Value, RecrefTemp.Field(Rec.FieldNo("Periodo de Pago")).Value,
                                             RecrefTemp.Field(Rec.Fieldno("Source Type")).Value);
+                                        end;
+                                    Campos.Funcion::Cadena:
+                                        begin
+                                            FieldT := FieldType::Text;
+                                            Valor := Cadena(RecrefTemp.Field(Rec.FieldNo("Source No.")).Value, RecrefTemp.Field(Rec.FieldNo("Periodo de Pago")).Value);
                                         end;
                                     Funciones::Vendedor:
                                         begin
@@ -383,6 +390,16 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
     var
         RecReftemp: RecordRef;
 
+    procedure Cadena(SourceCode: Code[20]; Empresa: Text[30]): Text
+    var
+        Customer: Record Customer;
+
+    begin
+        Customer.ChangeCompany(Empresa);
+        If Customer.Get(SourceCode) then
+            exit(Customer."Cod cadena");
+
+    end;
 
 
 }

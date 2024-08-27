@@ -1,7 +1,9 @@
 pageextension 93004 SaldoInterExt extends "Saldo Interempresas Det"
 {
 
-    procedure ExportExcel(var Filtros: Record "Filtros Informes"; Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
+    procedure ExportExcel(var Filtros: Record "Filtros Informes";
+    IdInforme: Integer;
+    Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
     var
         TempExcelBuffer: Record "Excel Buffer 2" temporary;
         ContabilidadLblEP: Label 'Saldo InterEmpresas';
@@ -49,7 +51,7 @@ pageextension 93004 SaldoInterExt extends "Saldo Interempresas Det"
         RecRef.Open(Database::"Saldo InterEmpresa", true);
         RecReftemp.Open(Database::"Saldo InterEmpresa", true);
 
-        Informes.Get(Filtros.Id);
+        Informes.Get(IdInforme);
         Campos.SetRange(Id, Informes.Id);
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
         Empresas.SetRange(Id, Informes.Id);
@@ -232,6 +234,11 @@ pageextension 93004 SaldoInterExt extends "Saldo Interempresas Det"
                                             begin
                                                 FieldT := FieldType::Text;
                                                 Valor := Cliente_Proveedor(RecrefTemp.Field(Campos.Campo).Value, Empresas.Empresa, RecrefTemp.Field(Rec.FieldNo("Source Type")).Value);
+                                            end;
+                                        funciones::Cadena:
+                                            begin
+                                                FieldT := FieldType::Text;
+                                                Valor := Cadena(RecrefTemp.Field(Campos.Campo).Value, Empresas.Empresa);
                                             end;
                                         // Funciones::Vendedor:
                                         //     begin
@@ -583,6 +590,17 @@ pageextension 93004 SaldoInterExt extends "Saldo Interempresas Det"
                 exit(Proveedor.Name)
             else
                 exit('');
+
+    end;
+
+    procedure Cadena(SourceCode: Code[20]; Empresa: Text[30]): Text
+    var
+        Customer: Record Customer;
+
+    begin
+        Customer.ChangeCompany(Empresa);
+        If Customer.Get(SourceCode) then
+            exit(Customer."Cod cadena");
 
     end;
 

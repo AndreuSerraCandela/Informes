@@ -6,7 +6,7 @@ page 7001200 "Formato Columnas"
     PageType = List;
     SourceTable = "formato Columnas";
     InsertAllowed = false;
-    DeleteAllowed = false;
+    DeleteAllowed = true;
 
     layout
     {
@@ -97,6 +97,28 @@ page 7001200 "Formato Columnas"
                         Rec."Color Fondo" := Colores."Color Excel";
                     end;
 
+                }
+                field("Insertar Vínculo"; Rec."Insertar vínculo")
+                {
+                    ApplicationArea = All;
+
+                }
+                field("Campo Hipervículo"; Rec."Campo Hipervínculo")
+                {
+                    ApplicationArea = All;
+
+                }
+                field("Tabla Hipervículo"; Rec."Tabla Hipervínculo")
+                {
+                    applicationArea = All;
+                }
+                field("Campo Relación"; Rec."Campo Relación")
+                {
+                    applicationArea = All;
+                }
+                field("Nombre Campo Relación"; Rec."Nombre Campo Relación")
+                {
+                    applicationArea = All;
                 }
 
             }

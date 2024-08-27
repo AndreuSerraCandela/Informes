@@ -1,7 +1,7 @@
-pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
+pageextension 93005 IngresosAnticipadosExt extends "Ingresos Anticipados"
 {
-
-    procedure ExportExcel(var Filtros: Record "Filtros Informes"; IdInforme: Integer; Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
+    procedure ExportExcel(var Filtros: Record "Filtros Informes"; Idinforme: Integer;
+    Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
     var
         TempExcelBuffer: Record "Excel Buffer 2" temporary;
         ContratosLblEP: Label 'Contratos';
@@ -41,13 +41,22 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         LinkContrato: Record "Sales Header";
         LinkCliente: Record "Customer";
         LinkProyecto: Record "Job";
+        Albaranes485: Record "Sales Header";
+        Facturas485: Record "Sales Header";
+        Abonos485: Record "Sales Header";
+        Contabilidad485: Record "G/L Entry";
+        NombreEmpresa: Text[30];
+        T485: Decimal;
+        F485: Decimal;
+        A485: Decimal;
+        DL485: Decimal;
     begin
         TempExcelBuffer.Reset();
         TempExcelBuffer.DeleteAll();
         FechaTarea := CalcDate('1S', WorkDate());
         RecRef.Open(36, true);
         RecReftemp.Open(36, true);
-        Informes.Get(IdInforme);
+        Informes.Get(Idinforme);
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
         if Destinatario."Nombre Informe" <> '' then
             ExcelFileNameEPR := ConvertStr(Destinatario."Nombre Informe", ' ', '_');
@@ -84,11 +93,13 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         Campos.SetRange(Include, true);
         if Campos.FindSet() then
             repeat
+                Vinculo := '';
                 If Not Formatos.Get(campos.Id, campos.Id_campo, true) then begin
                     Formatos.Init();
                     Formatos.Bold := true;
+
                 end;
-                EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", '', TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo", '');
+                EnterCell(TempExcelBuffer, Row, Campos.Orden, Campos.Titulo, Formatos.Bold, Formatos.Italic, Formatos.Underline, Formatos."Double Underline", '', TempExcelBuffer."Cell Type"::Text, Formatos.Fuente, Formatos."Tamaño", Formatos."Color Fuente", Formatos."Color Fondo", Vinculo);
                 if Campos."Ancho Columna" <> 0 then
                     TempExcelBuffer.SetColumnWidth(Campos.LetraColumna(Campos.Orden), Campos."Ancho Columna");
             until Campos.Next() = 0;
@@ -155,7 +166,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                     end;
                     If RecReftemp.Insert() then;
                 until Rec.Next() = 0;
-
+            RecReftemp.SetView('sorting("Document Type", "Bill-To Customer No.")');
 
             if RecReftemp.FindSet() then
                 repeat
@@ -270,6 +281,17 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                             else
                                                 valor := '';
                                         end;
+                                    Funciones::"Diferencia 485":
+                                        begin
+                                            FieldT := FieldType::Decimal;
+                                            //Rec."Prepmt. Payment Discount %" + Rec."Currency Factor" - Rec."VAT Base Discount %" + Rec."Invoice Discount Value"
+                                            T485 := RecrefTemp.Field(Rec.FieldNo("Prepmt. Payment Discount %")).Value;
+                                            F485 := RecrefTemp.Field(Rec.FieldNo("Currency Factor")).Value;
+                                            DL485 := RecrefTemp.Field(Rec.FieldNo("Invoice Discount Value")).Value;
+                                            A485 := RecrefTemp.Field(Rec.FieldNo("VAT Base Discount %")).Value;
+                                            Valor := T485 + F485 - A485 + DL485;
+                                        end;
+
                                     else
                                         Valor := '';
                                 end;
@@ -281,9 +303,15 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                     Formatos."Formato Columna" := '_-* #,##0.00_-;-* #,##0.00_-;';
                             end;
                             If Formatos."Insertar Vínculo" then begin
+
                                 LinkCliente.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
                                 LinkContrato.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
                                 LinkProyecto.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                Albaranes485.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                Facturas485.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                Abonos485.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                Contabilidad485.ChangeCompany(RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value);
+                                NombreEmpresa := RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value;
                                 Case RecrefTemp.Field(Campos.Campo).Name of
                                     'Nº Contrato':
                                         begin
@@ -298,7 +326,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                             if Not LinkProyecto.Get(RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value) then
                                                 LinkProyecto.Init()
                                             else
-                                                LinkContrato.SetRange("No.", LinkProyecto."No.");
+                                                LinkProyecto.SetRange("No.", LinkProyecto."No.");
                                             Vinculo := GetUrl(ClientType::Web, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value, ObjectType::Page, Page::"Job Card", LinkProyecto);
                                         end;
                                     'Sell-to Contact No.':
@@ -311,9 +339,43 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
                                         end;
 
 
-                                End;
+
+                                    'Prepmt. Payment Discount %':
+                                        begin
+                                            Contabilidad485.SetRange("G/L Account No.", '485', '4859999999');
+                                            Contabilidad485.SetRange("Job No.", RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value);
+
+                                            //https://bc220.malla.es/BC220/?company=Malla%20Publicidad&page=20&filter=%27G%2fL%20Entry%27.%27Job%20No.%27%20IS%20%27PR24-M0052%27%20AND%20%27G%2fL%20Entry%27.%27G%2fL%20Account%20No.%27%20IS%20%27485..486%27&dc=0&bookmark=C_EQAAAACH8Tsx;
+                                            Vinculo := 'https://bc220.malla.es/BC220/?company=' + NombreEmpresa +
+                                            '&page=20&filter=%27G%2fL%20Entry%27.%27Job%20No.%27%20IS%20%27'
+                                             + Format(RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value) +
+                                             '%27%20AND%20%27G%2fL%20Entry%27.%27G%2fL%20Account%20No.%27%20IS%20%27485..486%27';
+
+                                        end;
+                                    'Currency Factor':
+                                        begin
+                                            Facturas485.SetRange("Document Type", Facturas485."Document Type"::Order);
+                                            Facturas485.SetRange("Nº Proyecto", RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value);
+                                            Vinculo := GetUrl(ClientType::Web, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value, ObjectType::Page, Page::"Lista documentos venta MLL", Facturas485);
+                                        end;
+                                    'VAT Base Discount %':
+                                        begin
+                                            Abonos485.SetRange("Document Type", Abonos485."Document Type"::Order);
+                                            Abonos485.SetRange("Nº Proyecto", RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value);
+                                            Vinculo := GetUrl(ClientType::Web, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value, ObjectType::Page, Page::"Lista documentos venta MLL", Abonos485);
+                                        end;
+                                    'Invoice Discount Value':
+
+                                        begin
+                                            Albaranes485.SetRange("Document Type", Albaranes485."Document Type"::Order);
+                                            Albaranes485.SetRange("Nº Proyecto", RecrefTemp.Field(Rec.FieldNo("Nº Proyecto")).Value);
+                                            Vinculo := GetUrl(ClientType::Web, RecrefTemp.Field(Rec.FieldNo("Empresa del Cliente")).Value, ObjectType::Page, Page::"Lista documentos venta MLL", Albaranes485);
+                                        end;
+                                end;
+
                             end;
 
+                            //end;
                             Case FieldT of
                                 FieldT::Date:
                                     begin
@@ -390,16 +452,16 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
     end;
 
     local procedure EnterCell(
-        Var TempExcelBuf: Record "Excel Buffer 2" temporary;
-        RowNo: Integer;
-        ColumnNo: Integer;
-        CellValue: Text[250];
-        Bold: Boolean;
-        Italic: Boolean;
-        UnderLine: Boolean;
-        DobleUnderLine: Boolean;
-        NumberFormat: Text;
-        CellType: Option; Fuente: Text[30]; Tamaño: Integer; Color: Text; ColorFondo: Text; Vinvulo: Text)
+         Var TempExcelBuf: Record "Excel Buffer 2" temporary;
+         RowNo: Integer;
+         ColumnNo: Integer;
+         CellValue: Text[250];
+         Bold: Boolean;
+         Italic: Boolean;
+         UnderLine: Boolean;
+         DobleUnderLine: Boolean;
+         NumberFormat: Text;
+         CellType: Option; Fuente: Text[30]; Tamaño: Integer; Color: Text; ColorFondo: Text; Vinculo: Text)
     begin
         TempExcelBuf.Init();
         TempExcelBuf.Validate("Row No.", RowNo);
@@ -416,7 +478,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         TempExcelBuf."Font Size" := Tamaño;
         TempExcelBuf."Font Color" := Color;
         TempExcelBuf."Background Color" := ColorFondo;
-        TempExcelBuf.Vinculo := Vinvulo;
+        TempExcelBuf.Vinculo := Vinculo;
         TempExcelBuf.Insert();
     end;
 
@@ -512,6 +574,5 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
     var
         RecReftemp: RecordRef;
-
 
 }

@@ -451,7 +451,9 @@ page 7001195 "Informes Card"
             repeat
                 Dest += Destinatarios."e-mail" + ';';
             until Destinatarios.Next() = 0;
-        exit(Copystr(Dest, 1, StrLen(Dest) - 1));
+        if StrLen(Dest) > 0 then
+            exit(Copystr(Dest, 1, StrLen(Dest) - 1));
+        exit('');
     end;
 
 

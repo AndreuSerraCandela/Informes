@@ -1,7 +1,9 @@
 pageextension 93003 PanoramaExt extends "PanoramaBY"
 {
 
-    procedure ExportExcel(var Filtros: Record "Filtros Informes"; Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
+    procedure ExportExcel(var Filtros: Record "Filtros Informes";
+    IdInforme: Integer;
+    Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
     var
         TempExcelBuffer: Record "Excel Buffer 2" temporary;
         ContabilidadLblEP: Label 'Informes Financieros';
@@ -53,7 +55,7 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
         RecRef.Open(Database::"Acc. Schedule Line", true);
         RecReftemp.Open(Database::"Acc. Schedule Line", true);
 
-        Informes.Get(Filtros.Id);
+        Informes.Get(IdInforme);
         Campos.SetRange(Id, Informes.Id);
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
         Empresas.SetRange(Id, Informes.Id);
