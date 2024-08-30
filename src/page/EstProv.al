@@ -1119,7 +1119,7 @@ page 7001181 "Lista Proveedores Compra_Venta"
                                                     if Res.Get(SalesLine."No.") then
                                                         rLinVentaT.Description := Res.Name;
                                                     rLinVentaT."IC Item Reference No." := ProveedoresCompra."No.";
-                                                    rLinVentaT."Planned Delivery Date" := rCabventa."Order Date";
+                                                    rLinVentaT."Planned Delivery Date" := rCabcompra."Order Date";
                                                     rlinVentat."Shipment Date" := rCabCompra."Fecha Firma";
                                                     rLinVentaT."Originally Ordered No." := rCabCompra."No.";
                                                     rLinVentaT."Description 2" := ProveedoresCompra."Name";
@@ -1647,7 +1647,7 @@ page 7001183 "Lineas Venta"
                 }
                 field("Order Date"; Rec."Planned Delivery Date")
                 {
-                    Caption = 'Fecha Contrato';
+                    Caption = 'Fecha Pedido';
                     ApplicationArea = All;
                     ToolTip = 'Specifies the code for the location where the items on the line will be located.';
                     Visible = true;
