@@ -1008,6 +1008,7 @@ page 7001181 "Lista Proveedores Compra_Venta"
                                                 if Res.Get(LinCompraT."No.") then
                                                     LinCompraT.Description := Res.Name;
                                                 LinCompraT."Description 2" := ProveedoresCompra."Name";
+                                                LinCompraT."Order Date" := CabCompra."Order Date";
                                                 LinCompraT."Planned Receipt Date" := CabCompra."Order Date";
                                                 LinCompraT."Fecha inicial recurso" := Job."Starting Date";
                                                 LinCompraT."Posting Group" := ProveedoresCompra."VAT Registration No.";
@@ -1116,6 +1117,7 @@ page 7001181 "Lista Proveedores Compra_Venta"
                                                 If PurchLine.FindFirst() Then begin
                                                     rLinVentaT := SalesLine;
                                                     rLinVentaT := SalesLine;
+                                                    rLinVentaT."Document No." := LetraEmpresa(rLinVentaT."Document No.", Prov.Empresa);
                                                     if Res.Get(SalesLine."No.") then
                                                         rLinVentaT.Description := Res.Name;
                                                     rLinVentaT."IC Item Reference No." := ProveedoresCompra."No.";
@@ -1144,6 +1146,19 @@ page 7001181 "Lista Proveedores Compra_Venta"
         rLinVentaT.Reset();
 
     END;
+
+    procedure LetraEmpresa(No: Code[20]; Empresa: Text[30]): Code[20]
+    var
+        Inf: Record "Company Information";
+        letra: Code[20];
+    begin
+        inf.ChangeCompany(Empresa);
+        Inf.Get();
+        letra := Inf."Clave Recursos";
+        if letra <> CopyStr(No, 1, 2) then
+            No := letra + No;
+        exit(No);
+    end;
 
     local procedure DrillDownContableTodos()
     var
@@ -1674,7 +1689,7 @@ page 7001183 "Lineas Venta"
                     ApplicationArea = All;
                     ToolTip = 'Specifies how each unit of the item or resource is measured, such as in pieces or hours. By default, the value in the Base Unit of Measure field on the item or resource card is inserted.';
                 }
-                field("Unit price"; Rec."Unit Price")
+                field("Unit price"; -Rec."Unit Price")
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies the cost of one unit of the selected item or resource.';
@@ -1687,7 +1702,7 @@ page 7001183 "Lineas Venta"
                     Visible = false;
                 }
 
-                field("Line Amount"; Rec."Line Amount")
+                field("Line Amount"; -Rec."Line Amount")
                 {
                     ApplicationArea = All;
                     BlankZero = true;
