@@ -487,6 +487,7 @@ Codeunit 7001130 ControlInformes
     IdInforme: Integer;
     Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream): text
     var
+        Enlaces: Record "Enlaces Informes";
         TempExcelBuffer: Record "Excel Buffer 2" temporary;
         RecordLink: Record "Record Link";
         RecordLinkMgt: Codeunit "Record Link Management";
@@ -552,6 +553,9 @@ Codeunit 7001130 ControlInformes
         TableNo: Integer;
         PageID: Integer;
         PageManagement: Codeunit "Page Management";
+        Vendor: Record Vendor;
+        RecRefEnlace: RecordRef;
+        FieldRefEnlace: FieldRef;
     begin
 
         TempExcelBuffer.Reset();
@@ -789,6 +793,22 @@ Codeunit 7001130 ControlInformes
                                                 iF cUST.Get(TextValue) then
                                                     TextValue := cUST.Name;
                                             end;
+                                        Campos.Funcion::Cliente:
+                                            begin
+                                                FieldT := FieldType::Text;
+                                                TextValue := DevuelveCampo(Campos."Field Name", JsonObj, Fieldt);
+                                                cUST.ChangeCompany(Empresas.Empresa);
+                                                iF cUST.Get(TextValue) then
+                                                    TextValue := cUST.Name;
+                                            end;
+                                        Campos.Funcion::Proveedor:
+                                            begin
+                                                FieldT := FieldType::Text;
+                                                TextValue := DevuelveCampo(Campos."Field Name", JsonObj, Fieldt);
+                                                Vendor.ChangeCompany(Empresas.Empresa);
+                                                iF Vendor.Get(TextValue) then
+                                                    TextValue := Vendor.Name;
+                                            end;
                                         Campos.Funcion::Cadena:
                                             begin
                                                 FieldT := FieldType::Text;
@@ -824,6 +844,22 @@ Codeunit 7001130 ControlInformes
                                                 TextValue := Comercial(Empresas.Empresa, TextValue);
 
                                             end;
+                                        Campos.Funcion::Enlace:
+                                            begin
+                                                FieldT := FieldType::Text;
+                                                TextValue := DevuelveCampo(Campos."Field Name", JsonObj, Fieldt);
+                                                Enlaces.Get(Informes.Id, Campos.Id_campo);
+                                                RecRefEnlace.Close();
+                                                RecRefEnlace.Open(Enlaces."Tabla");
+                                                RecRefEnlace.ChangeCompany(Empresas.Empresa);
+                                                FieldRefEnlace := RecRefEnlace.Field(Enlaces."Campo Enlace");
+                                                FieldRefEnlace.SetFilter(TextValue);
+                                                iF RecRefEnlace.FindFirst() then begin
+                                                    FieldRefEnlace := RecRefEnlace.Field(Enlaces."Campo Datos");
+                                                    TextValue := FieldRefEnlace.Value;
+                                                end else
+                                                    TextValue := '';
+                                            end;
                                         Campos.Funcion::HiperVinculo:
                                             begin
                                                 If Not Formatos.Get(campos.Id, campos.Id_campo, false) then
@@ -847,6 +883,8 @@ Codeunit 7001130 ControlInformes
                                                     LinkTable.Close();
                                                     If StrPos(Vinculo, 'http://NAV-MALLA01:48900') <> 0 then
                                                         Vinculo := 'https://bc220.malla.es/' + CopyStr(Vinculo, 26);
+                                                    If StrPos(Vinculo, '/POWERBI/') <> 0 then
+                                                        Vinculo := CopyStr(Vinculo, 1, StrPos(Vinculo, '/POWERBI/') - 1) + '/BC220/' + CopyStr(Vinculo, StrPos(Vinculo, '/POWERBI/') + 8);
                                                     TextValue := Vinculo;
                                                     Vinculo := '';
                                                 end;
@@ -979,6 +1017,7 @@ Codeunit 7001130 ControlInformes
     begin
 
         Campo := ExternalizeName(Campo);
+
         if JsonObj.Get(Campo, MyFieldRef) then begin
             case Tipo of
                 Fieldtype::Date:
@@ -1278,8 +1317,11 @@ Codeunit 7001130 ControlInformes
     procedure ExternalizeName(Name: Text) ConvertedName: Text
     var
         CurrentPosition: Integer;
+        a: Integer;
     begin
         ConvertedName := Name;
+
+
 
         // Mimics the behavior of the compiler when converting a field or web service name to OData.
         CurrentPosition := StrPos(ConvertedName, '%');
@@ -1304,7 +1346,31 @@ Codeunit 7001130 ControlInformes
 
             CurrentPosition += 1;
         end;
+        if StrPos(ConvertedName, 'º') <> 0 then begin
+            a := StrPos(ConvertedName, 'º');
+            ConvertedName := CopyStr(ConvertedName, 1, a - 1) + '_x00BA_' + CopyStr(ConvertedName, a + 1);
+        end;
+        //ª
+        if StrPos(ConvertedName, 'ª') <> 0 then begin
+            a := StrPos(ConvertedName, 'ª');
+            ConvertedName := CopyStr(ConvertedName, 1, a - 1) + '_x00AA_' + CopyStr(ConvertedName, a + 1);
+        end;
 
+        //Ñ
+        if StrPos(ConvertedName, 'Ñ') <> 0 then begin
+            a := StrPos(ConvertedName, 'Ñ');
+            ConvertedName := CopyStr(ConvertedName, 1, a - 1) + '_x00D1_' + CopyStr(ConvertedName, a + 1);
+        end;
+        //ç
+        if StrPos(ConvertedName, 'ç') <> 0 then begin
+            a := StrPos(ConvertedName, 'ç');
+            ConvertedName := CopyStr(ConvertedName, 1, a - 1) + '_x00E7_' + CopyStr(ConvertedName, a + 1);
+        end;
+        //Ç
+        if StrPos(ConvertedName, 'Ç') <> 0 then begin
+            a := StrPos(ConvertedName, 'Ç');
+            ConvertedName := CopyStr(ConvertedName, 1, a - 1) + '_x00C7_' + CopyStr(ConvertedName, a + 1);
+        end;
         ConvertedName := RemoveTrailingUnderscore(ConvertedName);
     end;
 

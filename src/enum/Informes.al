@@ -31,6 +31,9 @@ enum 7001191 Funciones
     value(17; "Diferencia 485") { Caption = 'Diferencia 485'; }
     value(18; "Cadena") { Caption = 'Cadena'; }
     value(19; HiperVinculo) { Caption = 'HiperVinculo'; }
+    value(20; "Cliente") { Caption = 'Nombre Cliente'; }
+    value(21; "Proveedor") { Caption = 'Nombre Proveedor'; }
+    value(22; "Enlace") { Caption = 'Enlace Otra tabla'; }
 
 
 

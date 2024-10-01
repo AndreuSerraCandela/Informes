@@ -26,6 +26,24 @@ page 7001192 "Columnas Informes"
                 field(Funcion; Rec.Funcion)
                 {
                     ApplicationArea = All;
+                    trigger OnDrillDown()
+                    var
+                        Enlaces: Record "Enlaces Informes";
+                    begin
+                        If Rec.Funcion = Funciones::Enlace then begin
+                            If not Enlaces.Get(Rec.Id, Rec.Id_campo) then begin
+                                Enlaces.init();
+                                Enlaces.Id := Rec.Id;
+                                Enlaces."Campo Relación" := Rec.Id_campo;
+                                Enlaces."Nombre Campo Relación" := Rec."Field Name";
+                                Enlaces.Insert();
+                                Commit();
+                            end;
+                            Enlaces.SetRange("Campo Relación", Rec.Id_campo);
+                            Enlaces.SetRange(Id, Rec.Id);
+                            Page.RunModal(Page::"Enlaces", Enlaces);
+                        end;
+                    end;
                 }
                 field("Campo"; Rec."Campo")
                 {

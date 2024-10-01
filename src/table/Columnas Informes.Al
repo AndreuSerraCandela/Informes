@@ -20,6 +20,7 @@ table 7001244 "Columnas Informes"
                 Columna: Record "Columnas Informes";
                 Columnat: Record "Columnas Informes" temporary;
                 Preguntar: Boolean;
+                ControlInformes: Codeunit ControlInformes;
             begin
                 if Funcion = Funcion::Columna Then exit;
                 Informes.Get(Id);
@@ -46,6 +47,11 @@ table 7001244 "Columnas Informes"
                         "Field Name" := Columnat."Field Name";
                     end;
                 end;
+                If Informes.Get(Id) then begin
+                    If Informes.Informe = Informes.Informe::"Web Service" then begin
+                        "Field Name" := ControlInformes.ExternalizeName("Field Name");
+                    end;
+                end;
             end;
 
             trigger OnValidate()
@@ -53,6 +59,7 @@ table 7001244 "Columnas Informes"
                 Informes: Record "Informes";
                 Campos: Record Field;
                 Columna: Record "Columnas Informes";
+                ControlInformes: Codeunit "ControlInformes";
 
             begin
                 If Funcion = Funcion::Columna Then exit;
@@ -68,6 +75,11 @@ table 7001244 "Columnas Informes"
                 Campos.FindFirst();
                 Titulo := Campos."Field Caption";
                 "Field Name" := Campos.FieldName;
+                If Informes.Get(Id) then begin
+                    If Informes.Informe = Informes.Informe::"Web Service" then begin
+                        "Field Name" := ControlInformes.ExternalizeName("Field Name");
+                    end;
+                end;
             end;
 
 
