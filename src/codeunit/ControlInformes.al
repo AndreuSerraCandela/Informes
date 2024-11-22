@@ -159,6 +159,7 @@ Codeunit 7001130 ControlInformes
         Informes: Record "Informes";
         workdescription: Text;
         Saludo: Text;
+        Base64: Text;
     begin
         rInf.Get();
         workdescription := Informes.GetDescripcionAmpliada();
@@ -222,6 +223,8 @@ Codeunit 7001130 ControlInformes
         // CLEAR(BigText);
         BigText := BigText + '<br> </br>';
         BigText := BigText + '<br> </br>';
+        REmail.AddAttachment(Funciones.CargaPie(Base64), 'emailfoot.png');
+        BigText := BigText + '<img src="data:image/png;base64,' + base64 + '" />';//"emailFoot.png" />';
         BigText := BigText + '<img src="emailFoot.png" />';
         BigText := BigText + '<br> </br>';
         BigText := BigText + '<br> </br>';
@@ -251,7 +254,6 @@ Codeunit 7001130 ControlInformes
         BigText := BigText + (' automatizados de las direcciones del emisor o del destinatario.');
         BigText := BigText + '</font>';
         //REmail.Subject := 'Pago contrato ' + NContrato;
-        REmail.AddAttachment(Funciones.CargaPie(), 'emailfoot.png');
         REmail."Send to" := SalesPersonMail;
         if StrPos(SalesPersonMail, Informes.Bcc) <> 0 then
             Informes.bcc := '';
@@ -1675,6 +1677,112 @@ Codeunit 7001130 ControlInformes
             if r13.GET(r21."Salesperson Code") THEN EXIT(r13.Name);
         END;
 
+    end;
+
+    procedure RestApi(url: Text; RequestType: Option Get,patch,put,post,delete; payload: Text; JsonIdentificador: Text): Text
+    var
+        Ok: Boolean;
+        Respuesta: Text;
+        TypeHelper: Codeunit "Type Helper";
+    begin
+        RequestHeaders := Client.DefaultRequestHeaders();
+        //RequestHeaders.Add('Authorization', CreateBasicAuthHeader(Username, Password));
+
+        case RequestType of
+            RequestType::Get:
+                Client.Get(URL, ResponseMessage);
+            RequestType::patch:
+                begin
+                    RequestContent.WriteFrom(payload);
+
+                    RequestContent.GetHeaders(contentHeaders);
+                    contentHeaders.Clear();
+                    contentHeaders.Add('Content-Type', 'application/json-patch+json');
+
+                    RequestMessage.Content := RequestContent;
+
+                    RequestMessage.SetRequestUri(URL);
+                    RequestMessage.Method := 'PATCH';
+
+                    client.Send(RequestMessage, ResponseMessage);
+                end;
+            RequestType::post:
+                begin
+                    //RequestContent.WriteFrom(payload);
+                    payload := StrSubstNo(JsonIdentificador + '=%1', TypeHelper.UrlEncode(payload));
+                    RequestContent.WriteFrom(payload);
+                    RequestContent.GetHeaders(contentHeaders);
+                    contentHeaders.Clear();
+                    contentHeaders.Add('Content-Type', 'application/x-www-form-urlencoded');
+
+                    Client.Post(URL, RequestContent, ResponseMessage);
+                end;
+            RequestType::delete:
+                begin
+
+
+                    Client.Delete(URL, ResponseMessage);
+                end;
+        end;
+
+        ResponseMessage.Content().ReadAs(ResponseText);
+        exit(ResponseText);
+
+    end;
+
+    Procedure JsonExcel()
+    var
+        carga: Codeunit "ControlInformes";
+        // '{  "fileName": "C:\\temp\\Prueba.xlsx", "base64": "false", "sheets":';
+        //[{    "sheetName": "Prueba",   
+        //Data: [      {          "Row_No": 1,          "Column_No": 1,          "XlRowID": "1",          "XlColID": "A",          
+        //"Cell_Value_as_Text": "Hola Muchacho",          "Cell_Type": 1,          "NumberFormat": "",          "Bold": true,          
+        //"Italic": false,          "Underline": false,          "Double_Underline": false,          "Font_Name": "Arial",          
+        //"Font_Size": 12,          "Font_Color": "Black",          "Background_Color": "White",          
+        //"Vinculo": "http://192.168.10.226:8080/BC190/?company=SA%20VINYA%20DELS%20MOSCATELLS%2C%20S.L.&node=000138e7-a925-0000-1000-c100836bd2d2&page=50011&dc=0&bookmark=27_JAAAAACLAQAAAAJ7_1MAQQBDADIANAAtADAAMAAwADAAMQ",
+        //          "Comment": "",          "Formula": "",          "Formula2": "",          "Formula3": "",          "Formula4": "",          
+        //"Cell_Value_as_Blob": "",          "Formato_Columna": "",          "IsMark": false }]   } ] }';
+        JsonObj: JsonObject;
+        JsonSheet: JsonObject;
+        JsonArray: JsonArray;
+        JsonDataArray: JsonArray;
+        JsonDataObject: JsonObject;
+        JsonText: Text;
+        RequestType: Option Get,patch,put,post,delete;
+    begin
+        JsonObj.Add('fileName', 'C:\temp\Prueba.xlsx');
+        JsonObj.Add('base64', 'false');
+        JsonSheet.Add('sheetName', 'Prueba');
+        JsonDataObject.Add('Row_No', 1);
+        JsonDataObject.Add('Column_No', 1);
+        JsonDataObject.Add('XlRowID', '1');
+        JsonDataObject.Add('XlColID', 'A');
+        JsonDataObject.Add('Cell_Value_as_Text', 'Hola Muchacho');
+        JsonDataObject.Add('Cell_Type', 1);
+        JsonDataObject.Add('NumberFormat', '');
+        JsonDataObject.Add('Bold', true);
+        JsonDataObject.Add('Italic', false);
+        JsonDataObject.Add('Underline', false);
+        JsonDataObject.Add('Double_Underline', false);
+        JsonDataObject.Add('Font_Name', 'Arial');
+        JsonDataObject.Add('Font_Size', 12);
+        JsonDataObject.Add('Font_Color', 'Black');
+        JsonDataObject.Add('Background_Color', 'White');
+        JsonDataObject.Add('Vinculo', 'http://192.168.10.226:8080/BC190/?company=SA%20VINYA%20DELS%20MOSCATELLS%2C%20S.L.&node=000138e7-a925-0000-1000-c100836bd2d2&page=50011&dc=0&bookmark=27_JAAAAACLAQAAAAJ7_1MAQQBDADIANAAtADAAMAAwADAAMQ');
+        JsonDataObject.Add('Comment', '');
+        JsonDataObject.Add('Formula', '');
+        JsonDataObject.Add('Formula2', '');
+        JsonDataObject.Add('Formula3', '');
+        JsonDataObject.Add('Formula4', '');
+        JsonDataObject.Add('Cell_Value_as_Blob', '');
+        JsonDataObject.Add('Formato_Columna', '');
+        JsonDataObject.Add('IsMark', false);
+        JsonDataArray.Add(JsonDataObject);
+        JsonSheet.Add('Data', JsonDataArray);
+        JsonArray.Add(JsonSheet);
+        JsonObj.Add('sheets', JsonArray);
+        JsonObj.WriteTo(JsonText);
+        JsonText := carga.RestApi('http://192.168.10.226:81/MallaWebService.asmx/CreaOactualizaLibro', Requesttype::Post, Jsontext, 'JsonText');
     end;
 
 
