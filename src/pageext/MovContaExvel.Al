@@ -40,6 +40,9 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
         Hasta: Date;
         Periodos: Record "Periodos Informes";
         Control: Codeunit ControlInformes;
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        PlantillaBase64: Text;
     begin
 
         TempExcelBuffer.Reset();
@@ -243,16 +246,31 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
             RecReftemp.DeleteAll();
         until "Periodos".Next() = 0;
         Informes.CalcFields("Plantilla Excel");
-        if Informes."Plantilla Excel".HasValue then begin
-            Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            TempExcelBuffer.UpdateBookStream(InExcelStream, ContabilidadLblEP, true);
+        if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+            if Informes."Plantilla Excel".HasValue then
+                Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+            if Not Informes."Formato Json" then
+                TempExcelBuffer.UpdateBookStream(InExcelStream, ContabilidadLblEP, true);
 
-        end else
-            TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
-        TempExcelBuffer.WriteSheet(ContabilidadLblEP, CompanyName, UserId, Informes."Orientación");
-        TempExcelBuffer.CloseBook();
-        TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, CurrentDateTime, UserId));
-        TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            if Informes."Formato Json" then
+                PlantillaBase64 := ''
+            else
+                TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
+        end;
+        if Not Informes."Formato Json" then begin
+            TempExcelBuffer.WriteSheet(ContabilidadLblEP, CompanyName, UserId, Informes."Orientación");
+            TempExcelBuffer.CloseBook();
+            TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, CurrentDateTime, UserId));
+            TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            TempExcelBuffer.ModifyAll("Sheet Name", ContabilidadLblEP);
+            PlantillaBase64 := Control.JsonExcel(TempExcelBuffer, PlantillaBase64,
+            gUrlPlantilla);
+            Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
+        end;
+
     end;
 
     Procedure DevuelveCampo(Campo: Integer) Valor: Variant
@@ -389,6 +407,7 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
 
     var
         RecReftemp: RecordRef;
+        gUrlPlantilla: Text;
 
     procedure Cadena(SourceCode: Code[20]; Empresa: Text[30]): Text
     var

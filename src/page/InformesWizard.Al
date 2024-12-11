@@ -545,6 +545,8 @@ page 7001193 "Informes Setup Wizard"
                     Base64Txt: Text;
                     RecRf: RecordRef;
                     Plantilla: Text;
+                    DocAttachment: Record "Document Attachment";
+                    Ids: integer;
                 begin
                     UPLOADINTOSTREAM('Import', '', ' Excel Files (*.xls)|*.xls;*.xlsx', Plantilla, NVInStream);
                     Base64Txt := Base64.ToBase64(NVInStream);
@@ -554,10 +556,13 @@ page 7001193 "Informes Setup Wizard"
                     TempBlob.ToRecordRef(RecRf, Rec.FieldNo("Plantilla Excel"));
                     // Rec."Certificado firma Efactura".CreateOutStream(OutStr);
                     // CopyStream(OutStr, NVInStream);
+
                     RecRf.Modify();
                     Rec.Get(Rec."ID");
                     Rec.CalcFields("Plantilla Excel");
                     if not rec."Plantilla Excel".HasValue Then Error('No se ha importado la plantilla excel');
+                    Rec."Url Plantilla" := DocAttachment.FormBase64ToUrl(Base64Txt, 'Plantilla' + Format(Rec.Id) + '.xlsx', Ids);
+                    Rec.Modify();
                 end;
 
             }

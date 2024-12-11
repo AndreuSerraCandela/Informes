@@ -279,6 +279,17 @@ table 7001240 Informes
             Caption = 'Fecha Último Ejecución';
             DataClassification = ToBeClassified;
         }
+        field(34; "Formato Json"; Boolean)
+        {
+            Caption = 'Formato Json';
+            DataClassification = ToBeClassified;
+        }
+        field(35; "Url Plantilla"; Text[250])
+        {
+
+            DataClassification = ToBeClassified;
+        }
+
 
 
     }
@@ -369,7 +380,11 @@ table 7001240 Informes
                         Columnas.Init();
                         Columnas.Campo := TablaCamposPagina."Field ID";
                         Columnas.Titulo := TablaCamposPagina.Caption;
+                        //TODO: Verificar si es campo de tabla
+                        //if TablaCamposPagina.FieldKind=TablaCamposPagina.FieldKind::TableField then begin
+#pragma warning disable AL0432
                         if TablaCamposPagina.IsTableField then begin
+#pragma warning restore AL0432
                             Field.Get(TempTenantWebServiceColumns."Data Item", TablaCamposPagina."Field ID");
                             Columnas."Field Name" := Field.FieldName;
                         end;
@@ -459,7 +474,11 @@ table 7001240 Informes
                         Columnas.Id := Informe."Id";
                         Columnas.Campo := TablaCamposPagina."Field ID";
                         Columnas.Titulo := TablaCamposPagina.Caption;
+                        //TODO: Verificar si es campo de tabla
+                        //if TablaCamposPagina.FieldKind=TablaCamposPagina.FieldKind::TableField then begin
+#pragma warning disable AL0432
                         if TablaCamposPagina.IsTableField then begin
+#pragma warning restore AL0432
                             Field.Get(TempTenantWebServiceColumns."Data Item", TablaCamposPagina."Field ID");
                             Columnas."Field Name" := Field.FieldName;
                         end;

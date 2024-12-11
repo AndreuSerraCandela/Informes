@@ -47,6 +47,9 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
         PeriodType: Enum "Analysis Period Type";
         DateFilter: Text;
         HojasSeparadas: Boolean;
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        PlantillaBase64: Text;
     begin
 
         TempExcelBuffer.Reset();
@@ -141,8 +144,8 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
             HojasSeparadas := Empresas."Hojas Separadas";
             if HojasSeparadas then begin
 
-                if Informes."Plantilla Excel".HasValue then begin
-                    Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+
                     TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
                 end else
@@ -325,19 +328,31 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
             end;
         until Empresas.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
-        if Informes."Plantilla Excel".HasValue then begin
-            Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            if not HojasSeparadas then
+        if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+            if Informes."Plantilla Excel".HasValue then
+                Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+            if Not Informes."Formato Json" then
                 TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
 
-        end else
-            if not HojasSeparadas then
+        end else begin
+            if Informes."Formato Json" then
+                PlantillaBase64 := ''
+            else
                 TempExcelBuffer.CreateNewBook(ConvertStr(Informes.Descripcion, ' ', '_'));
-        if not HojasSeparadas then
+        end;
+        if Not Informes."Formato Json" then begin
             TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
-        TempExcelBuffer.CloseBook();
-        TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
-        TempExcelBuffer.SaveToStream(ExcelStream, true);
+            TempExcelBuffer.CloseBook();
+            TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
+            TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Informes.Descripcion, ' ', '_'));
+            PlantillaBase64 := Control.JsonExcel(TempExcelBuffer, PlantillaBase64,
+            gUrlPlantilla);
+            Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
+        end;
+
     end;
 
     Procedure DevuelveCampo(Campo: Integer) Valor: Variant
@@ -475,6 +490,7 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
     var
         RecReftemp: RecordRef;
         ScheduleName: Text;
+        gUrlPlantilla: Text;
 
 
     local procedure CrearCabecera(idInformes: Integer; var TempExcelBuffer: Record "Excel Buffer 2" temporary; var Row: Integer; var DesdeFecha: Date; var HastaFecha: Date; var FieldRef: FieldRef; var RecRefTemp: RecordRef)

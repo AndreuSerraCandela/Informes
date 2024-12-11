@@ -26,6 +26,16 @@ Codeunit 7001130 ControlInformes
         Intstream: InStream;
         HoraInicio: Boolean;
         HoraFin: Boolean;
+        Base64: Text;
+        Base64Convert: Codeunit "Base64 Convert";
+        DocAttch: Record "Document Attachment" temporary;
+        Id: Integer;
+        Control: Codeunit "ControlInformes";
+        UrlPlantilla: Text;
+        PlantillaBase64: Text;
+        FiltroDestinatario: Boolean;
+        Primero: Boolean;
+        UrlExcel: Text;
     begin
         NoOfMinutes := 5;
         MillisecondsToAdd := NoOfMinutes;
@@ -42,6 +52,12 @@ Codeunit 7001130 ControlInformes
                 HoraFin := ((Informe."Ending Time" = 0T) or (Informe."Ending Time" >= Time));
                 If (HoraInicio and HoraFin) Or (ProximaFecha = 0DT) then begin
                     If (Enhora(Informe."Earliest Start Date/Time", CurrentDateTime) or (ProximaFecha = 0DT)) then begin
+
+                        If Informe."Url Plantilla" = '' Then begin
+                            Informe.CalcFields("Plantilla Excel");
+                            If Informe."Plantilla Excel".HasValue then
+                                Control.UrlPlantilla(UrlPlantilla, Informe, PlantillaBase64, true);
+                        end;
                         Informe.Ejecutandose := true;
                         Informe."Fecha Últ. Ejecución" := Today;
                         Informe.Modify();
@@ -49,73 +65,86 @@ Codeunit 7001130 ControlInformes
                         Destinatario.Reset;
                         Destinatario.SetRange("No enviar", false);
                         Destinatario.SetRange("ID", Informe."ID");
+                        FiltroDestinatario := CompruebaFiltros(Destinatario);
+                        Primero := true;
                         if Destinatario.FindSet() then begin
                             repeat
-                                Filtros.Reset;
-                                Filtros.SetRange("ID", Informe."ID");
-                                if Not Filtros.FindSet() then Filtros.Init;
-                                ficheros.Reset();
-                                If ficheros.FindLast() then Secuencia := ficheros.Secuencia + 1 else Secuencia := 1;
-                                ficheros.Secuencia := Secuencia;
-                                ficheros."Nombre fichero" := Informe.Descripcion + '.xlsx';
-                                ficheros.Proceso := 'ENVIARXLS';
-                                repeat
+                                if Primero or FiltroDestinatario Then begin
+                                    Filtros.Reset;
+                                    Filtros.SetRange("ID", Informe."ID");
+                                    if Not Filtros.FindSet() then Filtros.Init;
+                                    ficheros.Reset();
+                                    If ficheros.FindLast() then Secuencia := ficheros.Secuencia + 1 else Secuencia := 1;
                                     ficheros.Secuencia := Secuencia;
-                                    Secuencia += 1;
-                                Until ficheros.Insert();
-                                ficheros.CalcFields(Fichero);
-                                ficheros.Fichero.CreateOutStream(out);
-                                case Informe.Informe Of
-                                    Informes::"Contratos x Empresa":
-                                        begin
-                                            Clear(Contratos);
-                                            Contratos.ExportExcel(Filtros, Informe.Id, Destinatario, out);
-                                        end;
-                                    Informes::"Ingresos Anticipados":
-                                        begin
-                                            Clear(Anticipos);
-                                            Anticipos.ExportExcel(Filtros, Informe.Id, Destinatario, out);
-                                        end;
-                                    informes::"Estadisticas Contabilidad":
-                                        begin
-                                            Clear(Conta);
-                                            Conta.ExportExcel(Filtros, Informe.Id, Destinatario, out);
-                                        end;
-                                    Informes::Tablas:
-                                        begin
-                                            ExportExcel(Filtros, Informe.Id, Destinatario, out);
-                                        end;
-                                    Informes::"Web Service":
-                                        begin
+                                    ficheros."Nombre fichero" := Informe.Descripcion + '.xlsx';
+                                    ficheros.Proceso := 'ENVIARXLS';
+                                    repeat
+                                        ficheros.Secuencia := Secuencia;
+                                        Secuencia += 1;
+                                    Until ficheros.Insert();
+                                    ficheros.CalcFields(Fichero);
+                                    ficheros.Fichero.CreateOutStream(out);
+                                    case Informe.Informe Of
+                                        Informes::"Contratos x Empresa":
+                                            begin
+                                                Clear(Contratos);
+                                                Contratos.ExportExcel(Filtros, Informe.Id, Destinatario, out);
+                                            end;
+                                        Informes::"Ingresos Anticipados":
+                                            begin
+                                                Clear(Anticipos);
+                                                Anticipos.ExportExcel(Filtros, Informe.Id, Destinatario, out);
+                                            end;
+                                        informes::"Estadisticas Contabilidad":
+                                            begin
+                                                Clear(Conta);
+                                                Conta.ExportExcel(Filtros, Informe.Id, Destinatario, out);
+                                            end;
+                                        Informes::Tablas:
+                                            begin
+                                                ExportExcel(Filtros, Informe.Id, Destinatario, out);
+                                            end;
+                                        Informes::"Web Service":
+                                            begin
 
-                                            if ExportExcelWeb(Filtros, Informe.Id, Destinatario, out) = 'Retry' then begin
-                                                //RecReftemp.Close();
-                                                ExportExcelWeb(Filtros, Informe.Id, Destinatario, out);
+                                                if ExportExcelWeb(Filtros, Informe.Id, Destinatario, out) = 'Retry' then begin
+                                                    //RecReftemp.Close();
+                                                    ExportExcelWeb(Filtros, Informe.Id, Destinatario, out);
+                                                end;
+
+                                            end;
+                                        Informes::"Informes Financieros":
+                                            begin
+                                                Clear(Panrorama);
+                                                Panrorama.ExportExcel(Filtros, Informe.Id, Destinatario, out);
+
+                                            end;
+                                        Informes::"Saldo InterEmpresas":
+                                            begin
+                                                Clear(Saldo);
+                                                Saldo.ExportExcel(Filtros, Informe.Id, Destinatario, out);
                                             end;
 
-                                        end;
-                                    Informes::"Informes Financieros":
-                                        begin
-                                            Clear(Panrorama);
-                                            Panrorama.ExportExcel(Filtros, Informe.Id, Destinatario, out);
-
-                                        end;
-                                    Informes::"Saldo InterEmpresas":
-                                        begin
-                                            Clear(Saldo);
-                                            Saldo.ExportExcel(Filtros, Informe.Id, Destinatario, out);
-                                        end;
-
+                                    end;
+                                    ficheros.Modify();
+                                    Commit();
                                 end;
-                                ficheros.Modify();
-                                Commit();
                                 if NoEnviar then begin
                                     ficheros.CalcFields(Fichero);
                                     ficheros.Fichero.CreateInStream(Intstream);
                                     DownloadFromStream(Intstream, 'Guardar', 'C:\Temp', 'ALL Files (*.*)|*.*', ficheros."Nombre fichero");
-                                end else
-                                    EnviaCorreo(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado");
-                            //end;
+                                    Destinatario.FindLast();
+                                end else begin
+                                    If Primero or FiltroDestinatario Then begin
+                                        ficheros.CalcFields(Fichero);
+                                        ficheros.Fichero.CreateInStream(Intstream);
+                                        Base64 := Base64Convert.ToBase64(Intstream);
+                                        ficheros.Delete();
+                                        UrlExcel := DocAttch.FormBase64ToUrl(Base64, Format(Informe.Id) + '.xlsx', Id);
+                                    end;
+                                    EnviaCorreo(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado", UrlExcel);
+                                end;
+                                Primero := false;
                             until Destinatario.Next() = 0;
                         end;
                         IF ProximaFecha <> 0DT tHEN begin
@@ -141,7 +170,7 @@ Codeunit 7001130 ControlInformes
         NewString := String;
     end;
 
-    local procedure EnviaCorreo(SalesPersonMail: Text; var ficheros: Record Ficheros; Informe: Text; InformeDestinatario: Text; IdInforme: Integer; NomBreDestinatario: Text)
+    local procedure EnviaCorreo(SalesPersonMail: Text; var ficheros: Record Ficheros; Informe: Text; InformeDestinatario: Text; IdInforme: Integer; NomBreDestinatario: Text; Url: Text)
 
 
     var
@@ -197,11 +226,14 @@ Codeunit 7001130 ControlInformes
 
 
         if workdescription = '' then
-            BigText := BigText + 'Adjuntamos el Informe: ' + Informe;
+            BigText := BigText + 'Remitimos el siguiente Informe: ' + Informe;
 
 
         BigText := BigText + '<br> </br>';
         BigText := BigText + workdescription;
+        If Url <> '' Then
+            BigText := BigText + '<font Color="blue"><a href="' + url + '">' + 'Pulse el Enlace para acceder al informe' + '</a></font></td>';
+
         //BigText:=('<br> </br>';
         BigText := BigText + '<br> </br>';
         BigText := BigText + '<br> </br>';
@@ -271,15 +303,15 @@ Codeunit 7001130 ControlInformes
         REmail.Subject := Informe;
 
 
-        ficheros.CalcFields(Fichero);
-        ficheros.Fichero.CreateInStream(AttachmentStream);
-        REmail.AddAttachment(AttachmentStream, Informe + '.xlsx');
+        // ficheros.CalcFields(Fichero);
+        // ficheros.Fichero.CreateInStream(AttachmentStream);
+        // REmail.AddAttachment(AttachmentStream, Informe + '.xlsx');
 
         // if REmail."From Address" <> '' Then
         //     REmail."Send BCC" := REmail."From Address" else
         //     REmail."Send BCC" := BCC();
         REmail.Send(true, emilesc::Informes);
-        ficheros.delete;
+        //ficheros.delete;
 
     end;
 
@@ -303,6 +335,7 @@ Codeunit 7001130 ControlInformes
         Todo: Record "To-do";
         Contact: Record "Contact";
         InExcelStream: Instream;
+        PlantillaBase64: Text;
         Continuar: Boolean;
         FechaTarea: Date;
         Campos: Record "Columnas Informes";
@@ -318,9 +351,11 @@ Codeunit 7001130 ControlInformes
         Vendedor: Code[20];
         ExcelFileNameEPR: Text;//Label '%1_%2_%3';
         RecrefTemp: RecordRef;
-
         LinkCliente: Record Customer;
         Vinculo: Text;
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        UrlPlantilla: Text;
     begin
 
         TempExcelBuffer.Reset();
@@ -472,17 +507,30 @@ Codeunit 7001130 ControlInformes
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
         if Destinatario."Nombre Informe" <> '' then
             ExcelFileNameEPR := ConvertStr(Destinatario."Nombre Informe", ' ', '_');
-        if Informes."Plantilla Excel".HasValue then begin
-            Informes."Plantilla Excel".CreateInStream(InExcelStream);
+        if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+            if Informes."Plantilla Excel".HasValue then
+                Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantilla(UrlPlantilla, Informes, PlantillaBase64, false);
+            if Not Informes."Formato Json" then
+                TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
 
-            TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
-
-        end else
-            TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
-        TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
-        TempExcelBuffer.CloseBook();
-        TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
-        TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            if Informes."Formato Json" then
+                PlantillaBase64 := '' else
+                TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
+        end;
+        If Not Informes."Formato Json" then begin
+            TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
+            TempExcelBuffer.CloseBook();
+            TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
+            TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            TempExcelBuffer.SetRange("Sheet Name", '');
+            TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Informes.Descripcion, ' ', '_'));
+            TempExcelBuffer.Reset();
+            PlantillaBase64 := JsonExcel(TempExcelBuffer, PlantillaBase64, gUrlPlantilla);
+            Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
+        end;
     end;
 
     procedure ExportExcelWeb(var Filtros: Record "Filtros Informes";
@@ -514,7 +562,6 @@ Codeunit 7001130 ControlInformes
         FieldRef: FieldRef;
         Id: RecordId;
         FieldT: FieldType;
-
         Campo: Integer;
         Tarea: Code[20];
         Contacto: Code[20];
@@ -558,6 +605,9 @@ Codeunit 7001130 ControlInformes
         Vendor: Record Vendor;
         RecRefEnlace: RecordRef;
         FieldRefEnlace: FieldRef;
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        PlantillaBase64: Text;
     begin
 
         TempExcelBuffer.Reset();
@@ -673,12 +723,22 @@ Codeunit 7001130 ControlInformes
             HojasSeparadas := Empresas."Hojas Separadas";
             if HojasSeparadas then begin
 
-                if Informes."Plantilla Excel".HasValue then begin
-                    Informes."Plantilla Excel".CreateInStream(InExcelStream);
-                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
+                if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+                    if Informes."Plantilla Excel".HasValue then
+                        Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                    Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+                    if Not Informes."Formato Json" then
+                        TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
-                end else
-                    TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end else begin
+                    if Informes."Formato Json" then
+                        PlantillaBase64 := '' else
+                        TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end;
+                if Informes."Formato Json" then begin
+                    TempExcelBuffer.SetRange("Sheet Name", '');
+                    TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end;
 
 
             end;
@@ -973,26 +1033,52 @@ Codeunit 7001130 ControlInformes
             until Periodos.Next() = 0;
             if HojasSeparadas then begin
                 //TempExcelBuffer.SelectOrAddSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'));
-                TempExcelBuffer.WriteSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'), Empresas.Empresa, UserId, Informes."Orientación");
-                TempExcelBuffer.DeleteAll();
+                if Informes."Formato Json" then begin
+                    TempExcelBuffer.SetRange("Sheet Name", '');
+                    TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end else begin
+                    TempExcelBuffer.WriteSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'), Empresas.Empresa, UserId, Informes."Orientación");
+                    TempExcelBuffer.DeleteAll();
+                end;
             end;
 
         until Empresas.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
-        if Informes."Plantilla Excel".HasValue then begin
+        if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
             Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            if not HojasSeparadas then
-                TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
-
+            if not HojasSeparadas then begin
+                if Informes."Plantilla Excel".HasValue then
+                    Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+                if Not Informes."Formato Json" then
+                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
+            end;
         end else
-            if not HojasSeparadas then
-                TempExcelBuffer.CreateNewBook(ConvertStr(Informes.Descripcion, ' ', '_'));
-        if not HojasSeparadas then
-            TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
-        TempExcelBuffer.CloseBook();
-        TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
-        TempExcelBuffer.SaveToStream(ExcelStream, true);
-        exit('OK');
+            if not HojasSeparadas then begin
+                if Informes."Formato Json" then
+                    PlantillaBase64 := '' else
+                    TempExcelBuffer.CreateNewBook(ConvertStr(Informes.Descripcion, ' ', '_'));
+            end;
+        if not HojasSeparadas then begin
+            if Informes."Formato Json" then begin
+                TempExcelBuffer.SetRange("Sheet Name", '');
+                TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Informes.Descripcion, ' ', '_'));
+            end else
+                TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
+        end;
+        if Not Informes."Formato Json" then begin
+            TempExcelBuffer.CloseBook();
+            TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
+            TempExcelBuffer.SaveToStream(ExcelStream, true);
+            exit('OK');
+        end else begin
+            TempExcelBuffer.Reset();
+            PlantillaBase64 := JsonExcel(TempExcelBuffer, PlantillaBase64,
+            gUrlPlantilla);
+            Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
+            exit('OK');
+        end;
+
     end;
 
     Procedure DevuelveCampo(Campo: Integer; var RecRefTemp: RecordRef) Valor: Variant
@@ -1458,6 +1544,16 @@ Codeunit 7001130 ControlInformes
             exit(true);
     end;
 
+    local procedure CompruebaFiltros(var Destinatario: Record "Destinatarios Informes"): Boolean
+    begin
+        If Destinatario.FindSet() then
+            repeat
+                if Destinatario."Campo Destinatario" <> 0 then
+                    exit(true);
+            until Destinatario.Next() = 0;
+        exit(false);
+    end;
+
 
     procedure BuildUrl(ServiceRootUrlParam: Text; SelectTextParam: Text; FilterTextParam: Text): Text
     var
@@ -1579,6 +1675,7 @@ Codeunit 7001130 ControlInformes
     var
 
         Fecha: date;
+        gUrlPlantilla: Text;
         TextValue: Text;
         Client: HttpClient;
         RequestHeaders: HttpHeaders;
@@ -1588,6 +1685,7 @@ Codeunit 7001130 ControlInformes
         ResponseText: Text;
         contentHeaders: HttpHeaders;
         MEDIA_TYPE: Label 'application/json';
+        Control: Codeunit "ControlInformes";
 
 
 
@@ -1730,7 +1828,7 @@ Codeunit 7001130 ControlInformes
 
     end;
 
-    Procedure JsonExcel()
+    Procedure JsonExcel(var Excel: Record "Excel Buffer 2"; Plantilla: Text; Url: Text): Text
     var
         carga: Codeunit "ControlInformes";
         // '{  "fileName": "C:\\temp\\Prueba.xlsx", "base64": "false", "sheets":';
@@ -1749,40 +1847,173 @@ Codeunit 7001130 ControlInformes
         JsonDataObject: JsonObject;
         JsonText: Text;
         RequestType: Option Get,patch,put,post,delete;
+        Sheets: Record "Empresas informes" temporary;
+        a: integer;
+        TempBlob: Codeunit "Temp Blob";
+        OUTSTREAM: OutStream;
+        InSTREAM: InStream;
+        Filename: Text;
+        Base64: Text;
+        Base64Convert: Codeunit "Base64 Convert";
+        DocAttachment: Record "Document Attachment" temporary;
+        Id: Array[100] of Integer;
+        Compresion: Codeunit "Data Compression";
+        StreamManager: Codeunit "Stream Management";
+        G: Guid;
+        ChunkSize: Integer;
+        Chunk: Text;
+        StartPos: Integer;
+        EndPos: Integer;
+        i: Integer;
     begin
-        JsonObj.Add('fileName', 'C:\temp\Prueba.xlsx');
-        JsonObj.Add('base64', 'false');
-        JsonSheet.Add('sheetName', 'Prueba');
-        JsonDataObject.Add('Row_No', 1);
-        JsonDataObject.Add('Column_No', 1);
-        JsonDataObject.Add('XlRowID', '1');
-        JsonDataObject.Add('XlColID', 'A');
-        JsonDataObject.Add('Cell_Value_as_Text', 'Hola Muchacho');
-        JsonDataObject.Add('Cell_Type', 1);
-        JsonDataObject.Add('NumberFormat', '');
-        JsonDataObject.Add('Bold', true);
-        JsonDataObject.Add('Italic', false);
-        JsonDataObject.Add('Underline', false);
-        JsonDataObject.Add('Double_Underline', false);
-        JsonDataObject.Add('Font_Name', 'Arial');
-        JsonDataObject.Add('Font_Size', 12);
-        JsonDataObject.Add('Font_Color', 'Black');
-        JsonDataObject.Add('Background_Color', 'White');
-        JsonDataObject.Add('Vinculo', 'http://192.168.10.226:8080/BC190/?company=SA%20VINYA%20DELS%20MOSCATELLS%2C%20S.L.&node=000138e7-a925-0000-1000-c100836bd2d2&page=50011&dc=0&bookmark=27_JAAAAACLAQAAAAJ7_1MAQQBDADIANAAtADAAMAAwADAAMQ');
-        JsonDataObject.Add('Comment', '');
-        JsonDataObject.Add('Formula', '');
-        JsonDataObject.Add('Formula2', '');
-        JsonDataObject.Add('Formula3', '');
-        JsonDataObject.Add('Formula4', '');
-        JsonDataObject.Add('Cell_Value_as_Blob', '');
-        JsonDataObject.Add('Formato_Columna', '');
-        JsonDataObject.Add('IsMark', false);
-        JsonDataArray.Add(JsonDataObject);
-        JsonSheet.Add('Data', JsonDataArray);
-        JsonArray.Add(JsonSheet);
+        if Excel.FindSet() Then begin
+            repeat
+                Sheets.SetRange(Empresa, Excel."Sheet Name");
+                If Not Sheets.FindSet() then begin
+                    a += 1;
+                    Sheets.Id := a;
+                    Sheets."Empresa" := Excel."Sheet Name";
+                    Sheets.Insert();
+                end;
+            until Excel.Next() = 0;
+            if Url <> '' then
+                JsonObj.Add('fileName', url)
+            else
+                JsonObj.Add('fileName', Plantilla);
+            if Url <> '' then
+                JsonObj.Add('base64', 'url')
+            else
+                JsonObj.Add('base64', 'true');
+
+        end;
+        If Sheets.FindSet() then
+            repeat
+                Clear(JsonSheet);
+                Clear(JsonArray);
+                JsonSheet.Add('sheetName', Sheets."Empresa");
+                Excel.SetRange("Sheet Name", Sheets."Empresa");
+                Clear(JsonDataArray);
+                Excel.SetFilter("Cell Value as Text", '<>%1', '');
+                If Excel.FindSet() then
+                    repeat
+                        Clear(JsonDataObject);
+                        JsonDataObject.Add('Row_No', Excel."Row No.");
+                        JsonDataObject.Add('Column_No', Excel."Column No.");
+                        JsonDataObject.Add('XlRowID', Excel."XlRowID");
+                        JsonDataObject.Add('XlColID', Excel."XlColID");
+                        JsonDataObject.Add('Cell_Value_as_Text', Excel."Cell Value as Text");
+                        JsonDataObject.Add('Cell_Type', Excel."Cell Type");
+                        If Excel.NumberFormat <> '' then
+                            JsonDataObject.Add('NumberFormat', Excel.NumberFormat);
+                        If Excel.Bold then
+                            JsonDataObject.Add('Bold', Excel.Bold);
+                        if Excel.Italic then
+                            JsonDataObject.Add('Italic', Excel.Italic);
+                        if Excel.Underline then
+                            JsonDataObject.Add('Underline', Excel.Underline);
+                        if Excel."Double Underline" then
+                            JsonDataObject.Add('Double_Underline', Excel."Double Underline");
+                        if Excel."Font Name" <> '' then
+                            JsonDataObject.Add('Font_Name', Excel."Font Name");
+                        if Excel."Font Size" <> 0 then
+                            JsonDataObject.Add('Font_Size', Excel."Font Size");
+                        if Excel."Font Color" <> '' then
+                            JsonDataObject.Add('Font_Color', Excel."Font Color");
+                        if Excel."Background Color" <> '' then
+                            JsonDataObject.Add('Background_Color', Excel."Background Color");
+                        if Excel.Vinculo <> '' then
+                            JsonDataObject.Add('Vinculo', Excel.Vinculo);
+                        If Excel.Comment <> '' then
+                            JsonDataObject.Add('Comment', Excel.Comment);
+                        if Excel.Formula <> '' then
+                            JsonDataObject.Add('Formula', Excel.Formula);
+                        if Excel.Formula2 <> '' then
+                            JsonDataObject.Add('Formula2', Excel.Formula2);
+                        if Excel.Formula3 <> '' then
+                            JsonDataObject.Add('Formula3', Excel.Formula3);
+                        if Excel.Formula4 <> '' then
+                            JsonDataObject.Add('Formula4', Excel.Formula4);
+                        //JsonDataObject.Add('Cell_Value_as_Blob', '');
+                        if Excel."Formato Columna" <> '' then
+                            JsonDataObject.Add('Formato_Columna', Excel."Formato Columna");
+                        //JsonDataObject.Add('IsMark', false);
+                        JsonDataArray.Add(JsonDataObject);
+                    until Excel.Next() = 0;
+
+                JsonSheet.Add('Data', JsonDataArray);
+                JsonArray.Add(JsonSheet);
+            until Sheets.Next() = 0;
         JsonObj.Add('sheets', JsonArray);
         JsonObj.WriteTo(JsonText);
-        JsonText := carga.RestApi('http://192.168.10.226:81/MallaWebService.asmx/CreaOactualizaLibro', Requesttype::Post, Jsontext, 'JsonText');
+        Tempblob.CREATEOUTSTREAM(OUTSTREAM, TextEncoding::UTF8);
+        OUTSTREAM.WRITE(JsonText);
+        TempBlob.CreateInStream(InSTREAM);
+        Base64 := Base64Convert.ToBase64(InSTREAM);
+        a := StrLen(Base64);
+        Clear(TempBlob);
+        G := CreateGuid();
+        //Enviar B64 en paquetes de 10*2014 a FromBase64URL
+
+        ChunkSize := 30 * 1024 * 1024; // 10 MB
+
+        StartPos := 1;
+        a := 0;
+        Clear(JsonObj);
+        clear(JsonArray);
+        clear(JsonSheet);
+        while StartPos <= StrLen(Base64) do begin
+            a += 1;
+            If a > 100 then
+                Error('Error en la carga del fichero');
+            if (StartPos + ChunkSize - 1) < StrLen(Base64) then
+                EndPos := StartPos + ChunkSize - 1
+            else
+                EndPos := StrLen(Base64);
+            Chunk := CopyStr(Base64, StartPos, EndPos - StartPos + 1);
+            JsonText := DocAttachment.FormBase64ToUrl(Chunk, G + '#' + Format(a) + '#' + '.txt', Id[a]);
+            Clear(JsonSheet);
+            JsonSheet.Add('JsonText', JsonText);
+
+            JsonArray.Add(JsonSheet);
+            StartPos := EndPos + 1;
+        end;
+        JsonObj.Add('JsonText', JsonArray);
+        JsonObj.WriteTo(JsonText);
+        //DownloadFromStream(InSTREAM, '', '', '', Filename);
+        JsonText := carga.RestApi('http://192.168.10.226:81/MallaWebService.asmx/CreaOactualizaLibro', Requesttype::Post, JsonText, 'JsonText');
+
+        //<?xml version="1.0" encoding="utf-8"?>
+        //<string xmlns="http://tempuri.org/">UEsDBBQAAAAIABteeln0Lo9U7gAAALwBAAAPABwAeGwvd29ya2Jvb2sueG1sIKIYACigFAAAAAAAAAAAAAAAAAAAAAAAAAAAALXRUU+DMBAH8K/S3LsrMBhCxpa5meiDkjB9Xko5Rh1tSdspH986zWZ88mVv1/9dmt+18+Uoe/KOxgqtCggnARBUXDdC7Qs4uvbmFpaL+Zh/aHOotT4QP69sPhbQOTfklFreoWR2ogdUvtdqI5nzR7OndjDIGtshOtnTKAhmVDKh4Ou+U2rPFVFMYgEP+o2FQE7RY+M9QEwufFElYcrjOktZFmVxyhF+IOY/EN22guNG86NE5b4lBnvm/NK2E4MFQv9SNuX69en++aXc7la7dXlXrapfsOgMC8IW6ySJgmmYxGyWXQFGL89FLz+x+ARQSwMECgAAAAAAG156WW/aYHYoAQAAKAEAAAsAHABfcmVscy8ucmVscyCiGAUAABoAAAB4bC93b3JrYm9vay54bWwgogYAFAAAAAgAG17pZ9C6PVNuAAAAC8BAAADAAgAeGwvd29ya2Jvb2sueG1sUEsFBgAAAAABAAEANgAAAG4AAAAAAA==</string>
+        JsonText := Copystr(Jsontext, Strpos(JsonText, '<string xmlns="http://tempuri.org/">') + 36);
+        JsonText := Copystr(Jsontext, 1, Strpos(JsonText, '</string>') - 1);
+        //Para cada id ejecutar DocAttachment.DeleteId;
+        for i := 1 to a do
+            DocAttachment.DeleteId(Id[i]);
+        exit(JsonText);
+    end;
+
+    internal procedure UrlPlantilla(var pUrlPlantilla: Text; var Informes: Record Informes; var PlantillaBase64: Text; Modificar: Boolean)
+    var
+        InExcelStream: InStream;
+        Base64Convert: Codeunit "Base64 Convert";
+        DocumentAttachment: Record "Document Attachment";
+        Id: Integer;
+
+    begin
+        if Informes."Url Plantilla" = '' Then begin
+            Informes.CalcFields("Plantilla Excel");
+            Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            PlantillaBase64 := Base64Convert.ToBase64(InExcelStream);
+            pUrlPlantilla := DocumentAttachment.FormBase64ToUrl(PlantillaBase64, 'Plantilla' + Format(Informes.Id) + '.xlsx', Id);
+            If Modificar then begin
+                Informes."Url Plantilla" := pUrlPlantilla;
+                //Informes.Modify();
+            end;
+
+        end else
+            pUrlPlantilla := Informes."Url Plantilla";
+
+
     end;
 
 

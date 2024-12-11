@@ -157,11 +157,19 @@ table 7001239 "Excel Buffer 2"
 
             DataClassification = ToBeClassified;
         }
+        field(24; "Shet Name"; Text[250])
+        {
+            DataClassification = ToBeClassified;
+        }
+        field(25; "Sheet Name"; Text[20])
+        {
+            DataClassification = ToBeClassified;
+        }
     }
 
     keys
     {
-        key(Key1; "Row No.", "Column No.")
+        key(Key1; "Shet Name", "Row No.", "Column No.")
         {
             Clustered = true;
         }
@@ -227,75 +235,7 @@ table 7001239 "Excel Buffer 2"
         ReadDateTimeInUtcDate := NewValue;
     end;
 
-    [Scope('OnPrem')]
-    procedure CopySheet(SheetName: Text; ClonedSheetName: Text; ReferenceSheetName: Text; PasteBefore: Boolean)
-    begin
-        XlWrkBkWriter.CopySheet(SheetName, ClonedSheetName, ReferenceSheetName, PasteBefore);
-    end;
 
-    [Scope('OnPrem')]
-    procedure DeleteWorksheet(SheetName: Text)
-    begin
-        XlWrkBkWriter.DeleteWorksheet(SheetName);
-    end;
-
-    [Scope('OnPrem')]
-    procedure GetSheetsCount(): Integer
-    begin
-        exit(XlWrkBkWriter.SheetsCount);
-    end;
-
-    procedure EnterCellByCellName(CellName: Text; CellValueAsText: Text[250])
-    var
-        CellPosition: DotNet CellPosition;
-        RowInt: Integer;
-        ColumnInt: Integer;
-    begin
-        CellPosition := XlWrkBkWriter.GetCellPosition(CellName);
-        if IsNull(CellPosition) then begin
-            CloseBook();
-            Error(CellNotFoundErr, CellName);
-        end;
-
-        RowInt := CellPosition.Row;
-        ColumnInt := CellPosition.Column;
-
-        if Get(RowInt, ColumnInt) then begin
-            "Cell Value as Text" := CellValueAsText;
-            Modify();
-        end else begin
-            Init();
-            Validate("Row No.", RowInt);
-            Validate("Column No.", ColumnInt);
-            "Cell Value as Text" := CellValueAsText;
-            Insert();
-        end;
-    end;
-
-    [Scope('OnPrem')]
-    procedure SetActiveWriterSheet(SheetName: Text)
-    begin
-        if SheetName = '' then
-            exit;
-
-        if XlWrkBkWriter.HasWorksheet(SheetName) then
-            XlWrkShtWriter := XlWrkBkWriter.GetWorksheetByName(SheetName)
-        else begin
-            CloseBook();
-            Error(Text004, SheetName);
-        end;
-    end;
-
-    [Scope('OnPrem')]
-    procedure GetWriterSheetNameByNumber(SheetNo: Integer): Text
-    begin
-        if XlWrkBkWriter.HasWorksheet(SheetNo) then
-            exit(XlWrkBkWriter.GetWorksheetNameById(Format(SheetNo)))
-        else begin
-            CloseBook();
-            Error(Text004, SheetNo);
-        end;
-    end;
 
     procedure CreateNewBook(SheetName: Text[250])
     begin

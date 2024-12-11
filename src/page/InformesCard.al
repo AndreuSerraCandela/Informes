@@ -60,6 +60,10 @@ page 7001195 "Informes Card"
                         ApplicationArea = All;
                         Caption = 'Tipo Informe';
                     }
+                    field("Formato Json"; Rec."Formato Json")
+                    {
+                        ApplicationArea = All;
+                    }
                     // field("Tabla filtros"; Rec."Tabla filtros")
                     // {
                     //     ApplicationArea = All;
@@ -341,6 +345,8 @@ page 7001195 "Informes Card"
                     Base64Txt: Text;
                     RecRf: RecordRef;
                     Plantilla: Text;
+                    Ids: Integer;
+                    DocAttachment: Record "Document Attachment";
                 begin
                     UPLOADINTOSTREAM('Import', '', ' Excel Files (*.xls)|*.xls;*.xlsx', Plantilla, NVInStream);
                     Base64Txt := Base64.ToBase64(NVInStream);
@@ -354,6 +360,8 @@ page 7001195 "Informes Card"
                     Rec.Get(Rec."ID");
                     Rec.CalcFields("Plantilla Excel");
                     if not rec."Plantilla Excel".HasValue Then Error('No se ha importado la plantilla excel');
+                    Rec."Url Plantilla" := DocAttachment.FormBase64ToUrl(Base64Txt, 'Plantilla' + Format(Rec.Id) + '.xlsx', Ids);
+                    Rec.Modify();
                 end;
             }
             action("Crear un Nuevo Informe")

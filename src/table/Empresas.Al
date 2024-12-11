@@ -30,6 +30,7 @@ table 7001245 "Empresas Informes"
         {
             DataClassification = ToBeClassified;
         }
+        
 
 
 

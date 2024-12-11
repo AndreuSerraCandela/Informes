@@ -183,6 +183,10 @@ page 7001198 "Informes"
                 {
                     ApplicationArea = All;
                 }
+                field("Formato Json"; Rec."Formato Json")
+                {
+                    ApplicationArea = All;
+                }
             }
         }
 

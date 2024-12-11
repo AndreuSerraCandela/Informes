@@ -9,6 +9,7 @@
             "serverInstance": "BC240",
             "authentication": "Windows",
             "tenant": "default",
+            "startupCompany": "Malla Publicidad",
             "environmentType": "OnPrem",
             "schemaUpdateMode": "ForceSync",
             "breakOnError": true,

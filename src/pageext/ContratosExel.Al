@@ -41,6 +41,9 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
         LinkContrato: Record "Sales Header";
         LinkCliente: Record "Customer";
         LinkProyecto: Record "Job";
+        TempBlob: Codeunit "Temp Blob";
+        Base64Convert: Codeunit "Base64 Convert";
+        PlantillaBase64: Text;
     begin
         TempExcelBuffer.Reset();
         TempExcelBuffer.DeleteAll();
@@ -362,16 +365,30 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
             RecReftemp.DeleteAll();
         until Periodos.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
-        if Informes."Plantilla Excel".HasValue then begin
-            Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            TempExcelBuffer.UpdateBookStream(InExcelStream, ContratosLblEP, true);
+        if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+            if Informes."Plantilla Excel".HasValue then
+                Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+            if Not Informes."Formato Json" then
+                TempExcelBuffer.UpdateBookStream(InExcelStream, ContratosLblEP, true);
 
-        end else
-            TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
-        TempExcelBuffer.WriteSheet(ContratosLblEP, CompanyName, UserId, Informes."Orientación");
-        TempExcelBuffer.CloseBook();
-        TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, CurrentDateTime, UserId));
-        TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            if Informes."Formato Json" then
+                PlantillaBase64 := ''
+            else
+                TempExcelBuffer.CreateNewBook(ExcelFileNameEPR);
+        end;
+        if Not Informes."Formato Json" then begin
+            TempExcelBuffer.WriteSheet(ContratosLblEP, CompanyName, UserId, Informes."Orientación");
+            TempExcelBuffer.CloseBook();
+            TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, CurrentDateTime, UserId));
+            TempExcelBuffer.SaveToStream(ExcelStream, true);
+        end else begin
+            TempExcelBuffer.ModifyAll("Sheet Name", ContratosLblEP);
+            PlantillaBase64 := Control.JsonExcel(TempExcelBuffer, PlantillaBase64,
+            gUrlPlantilla);
+            Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
+        end;
         RecReftemp.Close();
     end;
 
@@ -512,6 +529,7 @@ pageextension 93000 ContratosExt extends "Lista Contratos x Empresa"
 
     var
         RecReftemp: RecordRef;
+        gUrlPlantilla: Text;
 
 
 }
