@@ -319,7 +319,13 @@ page 7001181 "Lista Proveedores Compra_Venta"
                         Rec."Post Code" := Customer."Post Code";
                         Rec.County := Customer.County;
                         Rec."E-Mail" := Customer."E-Mail";
+#if CLEAN24
                         Rec."Home Page" := Customer."Home Page";
+#else
+#pragma warning disable AL0432
+                        Rec."Home Page" := Customer."Home Page";
+#pragma warning restore AL0432
+#endif
                         Rec."Primary Contact No." := Customer."Primary Contact No.";
 
                         Rec.MODIFY;

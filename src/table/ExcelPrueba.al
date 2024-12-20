@@ -206,7 +206,7 @@ table 7001239 "Excel Buffer 2"
         Text003: Label 'El dichero %1 no existe.';
         Text004: Label 'La hoja de excel %1 no existe.', Comment = '{Locked="Excel"}';
         Text005: Label 'Creando hoja Excel...\\', Comment = '{Locked="Excel"}';
-        PageTxt: Label 'Pájina';
+        PageTxt: Label 'Página';
         Text007: Label 'Leyendo Hoja de Excel...\\', Comment = '{Locked="Excel"}';
         Text013: Label '&B';
         Text014: Label '&D';
@@ -379,9 +379,18 @@ table 7001239 "Excel Buffer 2"
         end;
     end;
 
-    procedure UpdateBookStream(var ExcelStream: InStream; SheetName: Text; PreserveDataOnUpdate: Boolean)
+    procedure UpdateBookStream(var Base64: Text; SheetName: Text; PreserveDataOnUpdate: Boolean)
+    var
+        Base64Convert: codeunit "Base64 Convert";
+        TempBlob: Codeunit "Temp Blob";
+        Filename: Text;
+        ExcelStream: OutStream;
     begin
-        FileNameServer := FileManagement.InstreamExportToServerFile(ExcelStream, 'xlsx');
+        FileName := CopyStr(FileManagement.ServerTempFileName('xlsx'), 1, 250);
+        TempBlob.CreateOutStream(ExcelStream);
+        Base64Convert.FromBase64(Base64, ExcelStream);
+        FileManagement.BLOBExportToServerFile(TempBlob, Filename);
+        FileNameServer := Filename;//FileManagement.InstreamExportToServerFile(ExcelStream, 'xlsx');
 
         UpdateBookExcel(FileNameServer, SheetName, PreserveDataOnUpdate);
     end;
@@ -390,7 +399,7 @@ table 7001239 "Excel Buffer 2"
     begin
         if not IsNull(XlWrkBkWriter) then begin
             XlWrkBkWriter.ClearFormulaCalculations();
-            XlWrkBkWriter.ValidateDocument();
+            //XlWrkBkWriter.ValidateDocument();
             XlWrkBkWriter.Close();
             Clear(XlWrkShtWriter);
             Clear(XlWrkBkWriter);

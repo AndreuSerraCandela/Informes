@@ -36,6 +36,7 @@ Codeunit 7001130 ControlInformes
         FiltroDestinatario: Boolean;
         Primero: Boolean;
         UrlExcel: Text;
+        RecReftemp: RecordRef;
     begin
         NoOfMinutes := 5;
         MillisecondsToAdd := NoOfMinutes;
@@ -53,11 +54,11 @@ Codeunit 7001130 ControlInformes
                 If (HoraInicio and HoraFin) Or (ProximaFecha = 0DT) then begin
                     If (Enhora(Informe."Earliest Start Date/Time", CurrentDateTime) or (ProximaFecha = 0DT)) then begin
 
-                        If Informe."Url Plantilla" = '' Then begin
-                            Informe.CalcFields("Plantilla Excel");
-                            If Informe."Plantilla Excel".HasValue then
-                                Control.UrlPlantilla(UrlPlantilla, Informe, PlantillaBase64, true);
-                        end;
+                        // If Informe."Url Plantilla" = '' Then begin
+                        //     Informe.CalcFields("Plantilla Excel");
+                        //     If Informe."Plantilla Excel".HasValue then
+                        //         Intstream := Control.UrlPlantillaInstream(UrlPlantilla, Informe, PlantillaBase64, true);
+                        // end;
                         Informe.Ejecutandose := true;
                         Informe."Fecha Últ. Ejecución" := Today;
                         Informe.Modify();
@@ -98,7 +99,7 @@ Codeunit 7001130 ControlInformes
                                         informes::"Estadisticas Contabilidad":
                                             begin
                                                 Clear(Conta);
-                                                Conta.ExportExcel(Filtros, Informe.Id, Destinatario, out);
+                                                Conta.ExportExcel(Filtros, Informe.Id, Destinatario, out, RecReftemp, Primero);
                                             end;
                                         Informes::Tablas:
                                             begin
@@ -509,10 +510,10 @@ Codeunit 7001130 ControlInformes
             ExcelFileNameEPR := ConvertStr(Destinatario."Nombre Informe", ' ', '_');
         if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
             if Informes."Plantilla Excel".HasValue then
-                Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            Control.UrlPlantilla(UrlPlantilla, Informes, PlantillaBase64, false);
+                //Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                Control.UrlPlantillaInstream(UrlPlantilla, Informes, PlantillaBase64, false);
             if Not Informes."Formato Json" then
-                TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
+                TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Informes.Descripcion, ' ', '_'), true);
 
         end else begin
             if Informes."Formato Json" then
@@ -724,11 +725,11 @@ Codeunit 7001130 ControlInformes
             if HojasSeparadas then begin
 
                 if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
-                    if Informes."Plantilla Excel".HasValue then
-                        Informes."Plantilla Excel".CreateInStream(InExcelStream);
-                    Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+                    //if Informes."Plantilla Excel".HasValue then
+                    //  Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                    Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
                     if Not Informes."Formato Json" then
-                        TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
+                        TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
                 end else begin
                     if Informes."Formato Json" then
@@ -1047,11 +1048,11 @@ Codeunit 7001130 ControlInformes
         if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
             Informes."Plantilla Excel".CreateInStream(InExcelStream);
             if not HojasSeparadas then begin
-                if Informes."Plantilla Excel".HasValue then
-                    Informes."Plantilla Excel".CreateInStream(InExcelStream);
-                Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+                //if Informes."Plantilla Excel".HasValue then
+                //  Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
                 if Not Informes."Formato Json" then
-                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
+                    TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Informes.Descripcion, ' ', '_'), true);
             end;
         end else
             if not HojasSeparadas then begin
@@ -1830,6 +1831,7 @@ Codeunit 7001130 ControlInformes
 
     Procedure JsonExcel(var Excel: Record "Excel Buffer 2"; Plantilla: Text; Url: Text): Text
     var
+        ExcelBufferDialogMgt: Codeunit "Excel Buffer Dialog Management";
         carga: Codeunit "ControlInformes";
         // '{  "fileName": "C:\\temp\\Prueba.xlsx", "base64": "false", "sheets":';
         //[{    "sheetName": "Prueba",   
@@ -1857,7 +1859,6 @@ Codeunit 7001130 ControlInformes
         Base64Convert: Codeunit "Base64 Convert";
         DocAttachment: Record "Document Attachment" temporary;
         Id: Array[100] of Integer;
-        Compresion: Codeunit "Data Compression";
         StreamManager: Codeunit "Stream Management";
         G: Guid;
         ChunkSize: Integer;
@@ -1865,7 +1866,18 @@ Codeunit 7001130 ControlInformes
         StartPos: Integer;
         EndPos: Integer;
         i: Integer;
+        HttpClient: HttpClient;
+        HttpContent: HttpContent;
+        HttpRequestMessage: HttpRequestMessage;
+        HttpResponseMessage: HttpResponseMessage;
+        Text005: Label 'Creando hoja Excel...\\', Comment = '{Locked="Excel"}';
+        LastUpdate: Datetime;
+        TotalRecNo: Integer;
+        RecNo: Integer;
     begin
+        ExcelBufferDialogMgt.Open(Text005);
+        LastUpdate := CurrentDateTime;
+        TotalRecNo := Excel.Count();
         if Excel.FindSet() Then begin
             repeat
                 Sheets.SetRange(Empresa, Excel."Sheet Name");
@@ -1876,18 +1888,25 @@ Codeunit 7001130 ControlInformes
                     Sheets.Insert();
                 end;
             until Excel.Next() = 0;
+
             if Url <> '' then
                 JsonObj.Add('fileName', url)
             else
                 JsonObj.Add('fileName', Plantilla);
             if Url <> '' then
                 JsonObj.Add('base64', 'url')
-            else
-                JsonObj.Add('base64', 'true');
+            else begin
+                if Plantilla <> '' then
+                    JsonObj.Add('base64', 'true')
+                else
+                    JsonObj.Add('base64', 'false');
+            end;
 
         end;
         If Sheets.FindSet() then
             repeat
+                RecNo := RecNo + 1;
+                if not UpdateProgressDialog(ExcelBufferDialogMgt, LastUpdate, RecNo, TotalRecNo) then;
                 Clear(JsonSheet);
                 Clear(JsonArray);
                 JsonSheet.Add('sheetName', Sheets."Empresa");
@@ -1948,57 +1967,101 @@ Codeunit 7001130 ControlInformes
         Tempblob.CREATEOUTSTREAM(OUTSTREAM, TextEncoding::UTF8);
         OUTSTREAM.WRITE(JsonText);
         TempBlob.CreateInStream(InSTREAM);
-        Base64 := Base64Convert.ToBase64(InSTREAM);
-        a := StrLen(Base64);
-        Clear(TempBlob);
-        G := CreateGuid();
-        //Enviar B64 en paquetes de 10*2014 a FromBase64URL
 
-        ChunkSize := 30 * 1024 * 1024; // 10 MB
+        // Base64 := Base64Convert.ToBase64(InSTREAM);
+        // a := StrLen(Base64);
+        // Clear(TempBlob);
+        // G := CreateGuid();
+        // //Enviar B64 en paquetes de 10*2014 a FromBase64URL
 
-        StartPos := 1;
-        a := 0;
-        Clear(JsonObj);
-        clear(JsonArray);
-        clear(JsonSheet);
-        while StartPos <= StrLen(Base64) do begin
-            a += 1;
-            If a > 100 then
-                Error('Error en la carga del fichero');
-            if (StartPos + ChunkSize - 1) < StrLen(Base64) then
-                EndPos := StartPos + ChunkSize - 1
-            else
-                EndPos := StrLen(Base64);
-            Chunk := CopyStr(Base64, StartPos, EndPos - StartPos + 1);
-            JsonText := DocAttachment.FormBase64ToUrl(Chunk, G + '#' + Format(a) + '#' + '.txt', Id[a]);
-            Clear(JsonSheet);
-            JsonSheet.Add('JsonText', JsonText);
+        // ChunkSize := 30 * 1024 * 1024; // 10 MB
 
-            JsonArray.Add(JsonSheet);
-            StartPos := EndPos + 1;
-        end;
-        JsonObj.Add('JsonText', JsonArray);
-        JsonObj.WriteTo(JsonText);
+        // StartPos := 1;
+        // a := 0;
+        // Clear(JsonObj);
+        // clear(JsonArray);
+        // clear(JsonSheet);
+        // while StartPos <= StrLen(Base64) do begin
+        //     a += 1;
+        //     If a > 100 then
+        //         Error('Error en la carga del fichero');
+        //     if (StartPos + ChunkSize - 1) < StrLen(Base64) then
+        //         EndPos := StartPos + ChunkSize - 1
+        //     else
+        //         EndPos := StrLen(Base64);
+        //     Chunk := CopyStr(Base64, StartPos, EndPos - StartPos + 1);
+        //     JsonText := DocAttachment.FormBase64ToUrl(Chunk, G + '#' + Format(a) + '#' + '.txt', Id[a]);
+        //     Clear(JsonSheet);
+        //     JsonSheet.Add('JsonText', JsonText);
+
+        //     JsonArray.Add(JsonSheet);
+        //     StartPos := EndPos + 1;
+        // end;
+        // JsonObj.Add('JsonText', JsonArray);
+        // JsonObj.WriteTo(JsonText);
         //DownloadFromStream(InSTREAM, '', '', '', Filename);
-        JsonText := carga.RestApi('http://192.168.10.226:81/MallaWebService.asmx/CreaOactualizaLibro', Requesttype::Post, JsonText, 'JsonText');
+        JsonText := SendStreamToWebService('http://192.168.10.226:81/MallaWebService.asmx/CreaOactualizaLibroBin', InSTREAM);
+        //JsonText := carga.RestApi('http://192.168.10.226:81/MallaWebService.asmx/CreaOactualizaLibro', Requesttype::Post, JsonText, 'JsonText');
 
         //<?xml version="1.0" encoding="utf-8"?>
         //<string xmlns="http://tempuri.org/">UEsDBBQAAAAIABteeln0Lo9U7gAAALwBAAAPABwAeGwvd29ya2Jvb2sueG1sIKIYACigFAAAAAAAAAAAAAAAAAAAAAAAAAAAALXRUU+DMBAH8K/S3LsrMBhCxpa5meiDkjB9Xko5Rh1tSdspH986zWZ88mVv1/9dmt+18+Uoe/KOxgqtCggnARBUXDdC7Qs4uvbmFpaL+Zh/aHOotT4QP69sPhbQOTfklFreoWR2ogdUvtdqI5nzR7OndjDIGtshOtnTKAhmVDKh4Ou+U2rPFVFMYgEP+o2FQE7RY+M9QEwufFElYcrjOktZFmVxyhF+IOY/EN22guNG86NE5b4lBnvm/NK2E4MFQv9SNuX69en++aXc7la7dXlXrapfsOgMC8IW6ySJgmmYxGyWXQFGL89FLz+x+ARQSwMECgAAAAAAG156WW/aYHYoAQAAKAEAAAsAHABfcmVscy8ucmVscyCiGAUAABoAAAB4bC93b3JrYm9vay54bWwgogYAFAAAAAgAG17pZ9C6PVNuAAAAC8BAAADAAgAeGwvd29ya2Jvb2sueG1sUEsFBgAAAAABAAEANgAAAG4AAAAAAA==</string>
-        JsonText := Copystr(Jsontext, Strpos(JsonText, '<string xmlns="http://tempuri.org/">') + 36);
-        JsonText := Copystr(Jsontext, 1, Strpos(JsonText, '</string>') - 1);
+        //JsonText := Copystr(Jsontext, Strpos(JsonText, '<string xmlns="http://tempuri.org/">') + 36);
+        //JsonText := Copystr(Jsontext, 1, Strpos(JsonText, '</string>') - 1);
         //Para cada id ejecutar DocAttachment.DeleteId;
-        for i := 1 to a do
-            DocAttachment.DeleteId(Id[i]);
+        //for i := 1 to a do
+        //  DocAttachment.DeleteId(Id[i]);
+        ExcelBufferDialogMgt.Close();
         exit(JsonText);
     end;
 
-    internal procedure UrlPlantilla(var pUrlPlantilla: Text; var Informes: Record Informes; var PlantillaBase64: Text; Modificar: Boolean)
+    procedure SendStreamToWebService(Url: Text; InStream: InStream): Text
+    var
+        HttpClient: HttpClient;
+        HttpRequestMessage: HttpRequestMessage;
+        HttpResponseMessage: HttpResponseMessage;
+        HttpContent: HttpContent;
+        ResponseText: Text;
+        Compresion: Codeunit "Data Compression";
+        CompressedBlob: Codeunit "Temp Blob";
+        TempBlob: Codeunit "Temp Blob";
+        CompressedStream: OutStream;
+        OutStream: OutStream;
+        InCompressedStream: InStream;
+        Base64Convert: Codeunit "Base64 Convert";
+    begin
+        // Crear la solicitud HTTP
+        CompressedBlob.CreateOutStream(CompressedStream);
+        Compresion.GZipCompress(InSTREAM, CompressedStream);
+        CompressedBlob.CreateInStream(InStream);
+
+        // Crear contenido HTTP desde el InStream
+        HttpContent.WriteFrom(InStream); // Escribe directamente el contenido del InStream
+        HttpRequestMessage.Content := HttpContent;
+        HttpClient.Post(Url, HttpContent, HttpResponseMessage);
+        // Enviar la solicitud
+        // Leer la respuesta del servidor
+        if HttpResponseMessage.IsSuccessStatusCode() then begin
+            HttpResponseMessage.Content.ReadAs(InCompressedStream);
+            TempBlob.CreateOutStream(OutStream);
+            Compresion.GZipDecompress(InCompressedStream, OutStream);
+            Clear(InStream);
+            TempBlob.CreateInStream(InStream);
+            //CopyStream(OutStream, InStream);
+            ResponseText := Base64Convert.ToBase64(InStream);
+        end else
+            Error('Error al enviar la solicitud: %1', HttpResponseMessage.HttpStatusCode());
+
+        exit(ResponseText);
+    end;
+
+    internal procedure UrlPlantillaInstream(var pUrlPlantilla: Text; var Informes: Record Informes; var PlantillaBase64: Text; Modificar: Boolean);
     var
         InExcelStream: InStream;
         Base64Convert: Codeunit "Base64 Convert";
         DocumentAttachment: Record "Document Attachment";
         Id: Integer;
-
+        OutStream: OutStream;
+        Tempplob: Codeunit "Temp Blob";
     begin
         if Informes."Url Plantilla" = '' Then begin
             Informes.CalcFields("Plantilla Excel");
@@ -2012,10 +2075,26 @@ Codeunit 7001130 ControlInformes
 
         end else
             pUrlPlantilla := Informes."Url Plantilla";
+        PlantillaBase64 := DocumentAttachment.ToBase64StringOcr(pUrlPlantilla);
 
 
     end;
 
+    local procedure UpdateProgressDialog(var ExcelBufferDialogManagement: Codeunit "Excel Buffer Dialog Management"; var LastUpdate: DateTime; CurrentCount: Integer; TotalCount: Integer): Boolean
+    var
+        CurrentTime: DateTime;
+    begin
+        // Refresh at 100%, and every second in between 0% to 100%
+        // Duration is measured in miliseconds -> 1 sec = 1000 ms
+        CurrentTime := CurrentDateTime;
+        if (CurrentCount = TotalCount) or (CurrentTime - LastUpdate >= 1000) then begin
+            LastUpdate := CurrentTime;
+            if not ExcelBufferDialogManagement.SetProgress(Round(CurrentCount / TotalCount * 10000, 1)) then
+                exit(false);
+        end;
+
+        exit(true)
+    end;
 
 
 }

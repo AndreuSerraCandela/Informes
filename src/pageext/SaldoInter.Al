@@ -140,8 +140,8 @@ pageextension 93004 SaldoInterExt extends "Saldo Interempresas Det"
             if HojasSeparadas then begin
 
                 if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
-
-                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
+                    Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, true);
+                    TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
                 end else
                     TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.Empresa, ' ', '_'));
@@ -329,11 +329,11 @@ pageextension 93004 SaldoInterExt extends "Saldo Interempresas Det"
         until Empresas.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
         if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
-            if Informes."Plantilla Excel".HasValue then
-                Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+            //if Informes."Plantilla Excel".HasValue then
+            //  Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
             if Not Informes."Formato Json" then
-                TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
+                TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Informes.Descripcion, ' ', '_'), true);
 
         end else begin
             if Informes."Formato Json" then

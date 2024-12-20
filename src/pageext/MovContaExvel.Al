@@ -3,7 +3,7 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
 
     procedure ExportExcel(var Filtros: Record "Filtros Informes";
     IdInforme: Integer;
-    Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream)
+    Var Destinatario: Record "Destinatarios Informes"; var ExcelStream: OutStream; var RecReftemp2: RecordRef; Primero: Boolean)
     var
         TempExcelBuffer: Record "Excel Buffer 2" temporary;
         ContabilidadLblEP: Label 'Movs. contabilidad';
@@ -31,6 +31,7 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
         Contrato: Record "Sales Header";
         Valor: Variant;
         FieldRef: FieldRef;
+        FieldRef2: FieldRef;
         Id: RecordId;
         FieldT: FieldType;
         Fecha: Date;
@@ -50,6 +51,8 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
         FechaTarea := CalcDate('1S', WorkDate());
         RecRef.Open(17, true);
         RecReftemp.Open(17, true);
+        If Primero then
+            RecReftemp2.Open(17, true);
 
         Informes.Get(IdInforme);
         ExcelFileNameEPR := ConvertStr(Informes.Descripcion, ' ', '_');
@@ -124,23 +127,40 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
                     If "Periodos".Hasta <> DF then Hasta := CalcDate("Periodos".Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
                 end;
             end;
-            procesar(true, Desde, Hasta);
 
 
-            If Rec.FindFirst() then
-                repeat
-                    RecRef.GetTable(Rec);
-                    for Campo := 1 to RecRef.FieldCount do begin
-                        If RecRef.FieldIndex(campo).Active then begin
-                            FieldRef := RecRef.FieldIndex(Campo);
-                            RecRefTemp.Fieldindex(Campo).Value := FieldRef.Value;
+            If Primero Then begin
+                procesar(true, Desde, Hasta);
+                If Rec.FindFirst() then
+                    repeat
+                        RecRef.GetTable(Rec);
+                        for Campo := 1 to RecRef.FieldCount do begin
+                            If RecRef.FieldIndex(campo).Active then begin
+                                FieldRef := RecRef.FieldIndex(Campo);
+                                RecRefTemp.Fieldindex(Campo).Value := FieldRef.Value;
+                                RecReftemp2.Fieldindex(Campo).Value := FieldRef.Value;
 
+                            end;
+                            //Campo += 1
                         end;
-                        //Campo += 1
-                    end;
-                    RecReftemp.Insert();
-                until Rec.Next() = 0;
-
+                        RecReftemp.Insert();
+                        RecReftemp2.Insert();
+                    until Rec.Next() = 0;
+            end else begin
+                FieldRef2 := RecReftemp2.Field(Rec.FieldNo("Posting Date"));
+                FieldRef2.Setrange(Desde, Hasta);
+                if RecReftemp2.FindFirst() then
+                    repeat
+                        for Campo := 1 to RecReftemp2.FieldCount do begin
+                            If RecRef.FieldIndex(campo).Active then begin
+                                FieldRef := RecReftemp2.FieldIndex(Campo);
+                                RecReftemp.Fieldindex(Campo).Value := FieldRef.Value;
+                            end;
+                            //Campo += 1
+                        end;
+                        RecReftemp.Insert();
+                    until RecReftemp2.Next() = 0;
+            end;
             if RecReftemp.FindSet() then
                 repeat
                     if Informes."Crear Tarea" then
@@ -247,11 +267,11 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
         until "Periodos".Next() = 0;
         Informes.CalcFields("Plantilla Excel");
         if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
-            if Informes."Plantilla Excel".HasValue then
-                Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+            //if Informes."Plantilla Excel".HasValue then
+            //  Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
             if Not Informes."Formato Json" then
-                TempExcelBuffer.UpdateBookStream(InExcelStream, ContabilidadLblEP, true);
+                TempExcelBuffer.UpdateBookStream(PlantillaBase64, ContabilidadLblEP, true);
 
         end else begin
             if Informes."Formato Json" then
@@ -270,6 +290,7 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
             gUrlPlantilla);
             Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
         end;
+
 
     end;
 
@@ -406,8 +427,9 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
     end;
 
     var
-        RecReftemp: RecordRef;
+
         gUrlPlantilla: Text;
+        RecRefTemp: RecordRef;
 
     procedure Cadena(SourceCode: Code[20]; Empresa: Text[30]): Text
     var

@@ -428,11 +428,11 @@ pageextension 93005 IngresosAnticipadosExt extends "Ingresos Anticipados"
         until Periodos.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
         if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
-            if Informes."Plantilla Excel".HasValue then
-                Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+            //if Informes."Plantilla Excel".HasValue then
+            // Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
             if Not Informes."Formato Json" then
-                TempExcelBuffer.UpdateBookStream(InExcelStream, ContratosLblEP, true);
+                TempExcelBuffer.UpdateBookStream(PlantillaBase64, ContratosLblEP, true);
 
         end else begin
             if Informes."Formato Json" then

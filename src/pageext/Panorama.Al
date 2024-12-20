@@ -145,12 +145,19 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
             if HojasSeparadas then begin
 
                 if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+                    Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
+                    if Not Informes."Formato Json" then
+                        TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
 
-                    TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Empresas.HojaExcel, ' ', '_'), true);
-
-                end else
-                    TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.HojaExcel, ' ', '_'));
-
+                end else begin
+                    if Informes."Formato Json" then
+                        PlantillaBase64 := '' else
+                        TempExcelBuffer.CreateNewBook(ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end;
+                if Informes."Formato Json" then begin
+                    TempExcelBuffer.SetRange("Sheet Name", '');
+                    TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end;
 
             end;
         end;
@@ -322,36 +329,68 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
                 RecReftemp.DeleteAll();
             until "Periodos".Next() = 0;
             if HojasSeparadas then begin
-
-                TempExcelBuffer.WriteSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'), Empresas.Empresa, UserId, Informes."Orientación");
-                TempExcelBuffer.DeleteAll();
+                if Informes."Formato Json" then begin
+                    TempExcelBuffer.SetRange("Sheet Name", '');
+                    TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Empresas.HojaExcel, ' ', '_'));
+                end else begin
+                    TempExcelBuffer.WriteSheet(ConvertStr(Empresas.HojaExcel, ' ', '_'), Empresas.Empresa, UserId, Informes."Orientación");
+                    TempExcelBuffer.DeleteAll();
+                end;
             end;
         until Empresas.Next() = 0;
         Informes.CalcFields("Plantilla Excel");
         if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
-            if Informes."Plantilla Excel".HasValue then
-                Informes."Plantilla Excel".CreateInStream(InExcelStream);
-            Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
-            if Not Informes."Formato Json" then
-                TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
-
-        end else begin
-            if Informes."Formato Json" then
-                PlantillaBase64 := ''
-            else
-                TempExcelBuffer.CreateNewBook(ConvertStr(Informes.Descripcion, ' ', '_'));
+            Informes."Plantilla Excel".CreateInStream(InExcelStream);
+            if not HojasSeparadas then begin
+                //if Informes."Plantilla Excel".HasValue then
+                //  Informes."Plantilla Excel".CreateInStream(InExcelStream);
+                Control.UrlPlantillaInstream(gUrlPlantilla, Informes, PlantillaBase64, false);
+                if Not Informes."Formato Json" then
+                    TempExcelBuffer.UpdateBookStream(PlantillaBase64, ConvertStr(Informes.Descripcion, ' ', '_'), true);
+            end;
+        end else
+            if not HojasSeparadas then begin
+                if Informes."Formato Json" then
+                    PlantillaBase64 := '' else
+                    TempExcelBuffer.CreateNewBook(ConvertStr(Informes.Descripcion, ' ', '_'));
+            end;
+        if not HojasSeparadas then begin
+            if Informes."Formato Json" then begin
+                TempExcelBuffer.SetRange("Sheet Name", '');
+                TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Informes.Descripcion, ' ', '_'));
+            end else
+                TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
         end;
         if Not Informes."Formato Json" then begin
-            TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
             TempExcelBuffer.CloseBook();
             TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
             TempExcelBuffer.SaveToStream(ExcelStream, true);
+            exit;
         end else begin
-            TempExcelBuffer.ModifyAll("Sheet Name", ConvertStr(Informes.Descripcion, ' ', '_'));
+            TempExcelBuffer.Reset();
             PlantillaBase64 := Control.JsonExcel(TempExcelBuffer, PlantillaBase64,
             gUrlPlantilla);
             Base64Convert.FromBase64(PlantillaBase64, ExcelStream);
+            exit;
         end;
+        // if not Informes."Formato Json" then begin
+        //     // if (Informes."Plantilla Excel".HasValue) Or (Informes."Url Plantilla" <> '') then begin
+        //     //     if Informes."Plantilla Excel".HasValue then
+        //     //         Informes."Plantilla Excel".CreateInStream(InExcelStream);
+        //     //     Control.UrlPlantilla(gUrlPlantilla, Informes, PlantillaBase64, false);
+        //     //     if not HojasSeparadas then
+        //     //         TempExcelBuffer.UpdateBookStream(InExcelStream, ConvertStr(Informes.Descripcion, ' ', '_'), true);
+
+        //     // end else
+        //     if not HojasSeparadas then
+        //         TempExcelBuffer.CreateNewBook(ConvertStr(Informes.Descripcion, ' ', '_'));
+        //     if not HojasSeparadas then
+        //         TempExcelBuffer.WriteSheet(ConvertStr(Informes.Descripcion, ' ', '_'), CompanyName, UserId, Informes."Orientación");
+        //     TempExcelBuffer.CloseBook();
+        //     TempExcelBuffer.SetFriendlyFilename(StrSubstNo(ExcelFileNameEPR, ConvertStr(Informes.Descripcion, ' ', '_'), CurrentDateTime, UserId));
+        //     TempExcelBuffer.SaveToStream(ExcelStream, true);
+        // end;
+
 
     end;
 
