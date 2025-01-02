@@ -568,16 +568,16 @@ page 7001193 "Informes Setup Wizard"
             }
 
         }
-#pragma warning disable AL0788 // TODO: - Corregir en un futuro
-        area(Promoted)
-#pragma warning restore AL0788 // TODO: - Corregir en un futuro
-        {
-            actionref(AddFiltersAction_Ref; AddFiltersAction) { }
-            actionref(BackAction_Ref; BackAction) { }
-            actionref(NextAction_Ref; NextAction) { }
-            actionref(FinishAction_Ref; FinishAction) { }
-            actionref(CreateExcelWorkBook_Ref; CreateExcelWorkBook) { }
-        }
+        // #pragma warning disable AL0788 // TODO: - Corregir en un futuro
+        //         area(Promoted)
+        // #pragma warning restore AL0788 // TODO: - Corregir en un futuro
+        //         {
+        //             actionref(AddFiltersAction_Ref; AddFiltersAction) { }
+        //             actionref(BackAction_Ref; BackAction) { }
+        //             actionref(NextAction_Ref; NextAction) { }
+        //             actionref(FinishAction_Ref; FinishAction) { }
+        //             actionref(CreateExcelWorkBook_Ref; CreateExcelWorkBook) { }
+        //         }
     }
 
     trigger OnInit()

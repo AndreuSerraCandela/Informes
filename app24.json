@@ -6,7 +6,7 @@
   "target": "OnPrem",
   "description": "",
   
-  "version": "1.0.0.0",
+  "version": "1.0.0.1",
   "privacyStatement": "",
   "EULA": "",
   "help": "",
@@ -17,33 +17,33 @@
       "id": "7a7d3479-e693-4f3d-8336-aac424523182",
       "name": "Malla Wave 2.0",
       "publisher": "Grupo Malla by Andreu",
-      "version": "2.1.5.7"
+      "version": "2.1.5.8"
     },
     {
       "id": "d9cb442a-be20-49a4-a6d6-9ad6a9fbd205",
       "name": "PowerBiMalla",
       "publisher": "Andreu Serra",
-      "version": "1.0.0.2"
+      "version": "1.0.0.3"
     },
     {
       "id": "7a7d3479-e693-4f3d-8336-aac424523186",
       "name": "Ocr Malla",
       "publisher": "Andreu Serra",
-      "version": "2.1.2.7"
+      "version": "2.1.2.8"
     }
    
     
     
   ],
   "screenshots": [],
-  "platform": "1.0.0.0",
+  "platform": "24.0.0.0",
   "idRanges": [ 
   ],
-  "application": "22.0.0.0",
+  "application": "24.0.0.0",
   "resourceExposurePolicy": {
     "allowDebugging": true,
     "allowDownloadingSource": true,
     "includeSourceInSymbolFile": false
   },
-  "runtime": "11.0"
+  "runtime": "13.1"
 }

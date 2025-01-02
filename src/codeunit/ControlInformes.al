@@ -1702,10 +1702,11 @@ Codeunit 7001130 ControlInformes
     var
         Ok: Boolean;
         Respuesta: Text;
+        Base64Convert: Codeunit "Base64 Convert";
     begin
         RequestHeaders := Client.DefaultRequestHeaders();
-        RequestHeaders.Add('Authorization', 'Basic cGk6SWI2MzQzZHMu');
-        //CreateBasicAuthHeader(User, Pass, RequestHeaders); debería devilver lo mismo
+        //RequestHeaders.Add('Authorization', 'Basic cGk6SWI2MzQzZHMu');
+        RequestHeaders.Add('Authorization', 'Basic ' + Base64Convert.ToBase64(User + ':' + Pass)); //debería devilver lo mismo
 
 
         case RequestType of
