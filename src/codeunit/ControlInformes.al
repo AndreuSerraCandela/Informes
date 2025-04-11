@@ -164,7 +164,7 @@ Codeunit 7001130 ControlInformes
         end;
     end;
 
-    procedure StrReplace(String: Text[250]; FindWhat: Text[250]; ReplaceWith: Text[250]) NewString: Text[250]
+    procedure StrReplace(String: Text; FindWhat: Text; ReplaceWith: Text) NewString: Text
     begin
         WHILE STRPOS(String, FindWhat) > 0 DO
             String := DELSTR(String, STRPOS(String, FindWhat)) + ReplaceWith + COPYSTR(String, STRPOS(String, FindWhat) + STRLEN(FindWhat));
@@ -192,6 +192,7 @@ Codeunit 7001130 ControlInformes
         Base64: Text;
     begin
         rInf.Get();
+        If not Informes.Get(IdInforme) then Informes.Init();
         workdescription := Informes.GetDescripcionAmpliada();
         if InformeDestinatario <> '' then
             Informe := ConvertStr(InformeDestinatario, ' ', '_') + '_' + Format(Today(), 0, '<Year4><Month,2><Day,2>');
@@ -231,7 +232,7 @@ Codeunit 7001130 ControlInformes
 
 
         BigText := BigText + '<br> </br>';
-        BigText := BigText + workdescription;
+        BigText := BigText + Saludo + ' ' + workdescription;
         If Url <> '' Then
             BigText := BigText + '<font Color="blue"><a href="' + url + '">' + 'Pulse el Enlace para acceder al informe' + '</a></font></td>';
 
@@ -287,7 +288,11 @@ Codeunit 7001130 ControlInformes
         BigText := BigText + (' automatizados de las direcciones del emisor o del destinatario.');
         BigText := BigText + '</font>';
         //REmail.Subject := 'Pago contrato ' + NContrato;
-        REmail."Send to" := SalesPersonMail;
+        If Informes."Solo Bcc" then begin
+            REmail."Send to" := Informes.Bcc;
+            Informes.bcc := '';
+        end else
+            REmail."Send to" := SalesPersonMail;
         if StrPos(SalesPersonMail, Informes.Bcc) <> 0 then
             Informes.bcc := '';
         If Informes.bcc <> '' then begin

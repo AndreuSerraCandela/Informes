@@ -260,6 +260,11 @@ table 7001240 Informes
             Caption = 'CCO';
             DataClassification = ToBeClassified;
         }
+        field(36; "Solo Bcc"; Boolean)
+        {
+            Caption = 'Solo CCO';
+            DataClassification = ToBeClassified;
+        }
         field(30; Ejecutandose; Boolean)
         {
 

@@ -143,8 +143,8 @@ pageextension 93001 MovContaExt extends "MovContabilidad"
                             end;
                             //Campo += 1
                         end;
-                        RecReftemp.Insert();
-                        RecReftemp2.Insert();
+                        If RecReftemp.Insert() Then;
+                        If RecReftemp2.Insert() Then;
                     until Rec.Next() = 0;
             end else begin
                 FieldRef2 := RecReftemp2.Field(Rec.FieldNo("Posting Date"));

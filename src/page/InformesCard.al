@@ -52,6 +52,10 @@ page 7001195 "Informes Card"
                     {
                         ApplicationArea = All;
                     }
+                    field("Solo BCC"; Rec."Solo BCC")
+                    {
+                        ApplicationArea = All;
+                    }
                 }
                 group(Definición)
                 {

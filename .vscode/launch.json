@@ -4,7 +4,7 @@
         {
             "type": "al",
             "request": "launch",
-            "name": "Your own server",
+            "name": "server",
             "server": "http://192.168.10.226:8080/POWERBI",
             "serverInstance": "POWERBI",
             "authentication": "UserPassword",
@@ -20,6 +20,24 @@
             "enableSqlInformationDebugger": true,
             "port": 49049,
             "debugServer": 49049
+        },
+        {
+            "type": "al",
+            "request": "launch",
+            "name": "local",
+            "server": "http://localhost:8080/BC240",
+            "serverInstance": "BC240",
+            "authentication": "Windows",
+            "tenant": "default",
+            "startupCompany": "Malla Publicidad",
+            "environmentType": "OnPrem",
+            "schemaUpdateMode": "ForceSync",
+            "breakOnError": true,
+            "launchBrowser": true,
+            "enableLongRunningSqlStatements": true,
+            "enableSqlInformationDebugger": true,
+            "port": 7049,
+            "debugServer": 7049
         }
     ]
 }

@@ -6,8 +6,11 @@ dotnet
         {
             //IsControlAddIn = true;
         }
+        //type(IEnumerator;IEnumerator){}
 
     }
+
+    //IsControlAddIn =
     assembly("DocumentFormat.OpenXml")
     {
         type("DocumentFormat.OpenXml.Spreadsheet.OrientationValues"; OrientationValues)
