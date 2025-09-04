@@ -58,9 +58,34 @@ dotnet
     }
     assembly(mscorlib)
     {
-        type("System.IO.FileMode"; FileMoode)
+        type("System.Text.StringBuilder"; TextStringBuilder)
         { }
 
+        type("System.String"; String)
+        { }
+
+
+
+    }
+
+    assembly(System.Text.Encoding)
+    {
+        type("System.Text.Encoding"; Encoding)
+        { }
+    }
+    assembly("System.IO")
+    {
+
+        type("System.IO.StreamWriter"; StreamWriter)
+        { }
+        type("System.IO.Stream"; Stream)
+        { }
+
+    }
+    assembly("System.IO.FileSystem.Primitives")
+    {
+        type("System.IO.FileMode"; FileMode)
+        { }
     }
     assembly("System.Xml")
     {
@@ -72,6 +97,11 @@ dotnet
         { }
 
 
+    }
+    assembly("System.Drawing.Common")
+    {
+        type("System.Drawing.Bitmap"; BitMap) { }
+        type("System.Drawing.Graphics"; Graphics) { }
     }
 
 

@@ -33,6 +33,10 @@ page 7001197 "Filtros Informes"
                 {
                     ApplicationArea = All;
                 }
+                field("Es Cierre";Rec."Fecha Cierre")
+                {
+                    
+                }
             }
         }
     }

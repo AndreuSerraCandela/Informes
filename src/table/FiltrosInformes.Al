@@ -50,7 +50,10 @@ table 7001242 "Filtros Informes"
         {
             caption = 'Hasta (fecha ejecución)';
             DataClassification = ToBeClassified;
+
         }
+        field(6; "Fecha Cierre"; Boolean)
+        { }
 
     }
     keys

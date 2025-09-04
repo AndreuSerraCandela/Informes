@@ -19,7 +19,7 @@ Codeunit 7001130 ControlInformes
         Panrorama: Page "PanoramaBy";
         Saldo: Page "Saldo Interempresas Det";
         Out: OutStream;
-        ficheros: Record Ficheros temporary;
+        ficheros: Record Ficheros;
         Secuencia: Integer;
         MillisecondsToAdd: Integer;
         NoOfMinutes: Integer;
@@ -79,6 +79,7 @@ Codeunit 7001130 ControlInformes
                                     ficheros.Secuencia := Secuencia;
                                     ficheros."Nombre fichero" := Informe.Descripcion + '.xlsx';
                                     ficheros.Proceso := 'ENVIARXLS';
+                                    ficheros.Procesado := true;
                                     repeat
                                         ficheros.Secuencia := Secuencia;
                                         Secuencia += 1;
@@ -140,10 +141,14 @@ Codeunit 7001130 ControlInformes
                                         ficheros.CalcFields(Fichero);
                                         ficheros.Fichero.CreateInStream(Intstream);
                                         Base64 := Base64Convert.ToBase64(Intstream);
-                                        ficheros.Delete();
+                                        ficheros."Fecha Caducidad" := CalcDate('PM+2M', today);
+                                        //ficheros.Delete();
                                         UrlExcel := DocAttch.FormBase64ToUrl(Base64, Format(Informe.Id) + '.xlsx', Id);
+                                        clear(ficheros.Fichero);
+                                        ficheros.Id_Url := Id;
+                                        ficheros.Modify();
                                     end;
-                                    EnviaCorreo(Destinatario."e-mail", ficheros, Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado", UrlExcel);
+                                    EnviaCorreo(Destinatario."e-mail", Informe.Descripcion, destinatario."Nombre Informe", Informe."ID", Destinatario."Nombre Empleado", UrlExcel);
                                 end;
                                 Primero := false;
                             until Destinatario.Next() = 0;
@@ -171,7 +176,7 @@ Codeunit 7001130 ControlInformes
         NewString := String;
     end;
 
-    local procedure EnviaCorreo(SalesPersonMail: Text; var ficheros: Record Ficheros; Informe: Text; InformeDestinatario: Text; IdInforme: Integer; NomBreDestinatario: Text; Url: Text)
+    local procedure EnviaCorreo(SalesPersonMail: Text; Informe: Text; InformeDestinatario: Text; IdInforme: Integer; NomBreDestinatario: Text; Url: Text)
 
 
     var
@@ -383,6 +388,7 @@ Codeunit 7001130 ControlInformes
                 Row += 1;
                 If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                 If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                 FieldRef := RecReftemp.Field(Filtros.Campo);
                 if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
                     FieldRef.SetRange(DesdeFecha, HastaFecha);
@@ -639,6 +645,7 @@ Codeunit 7001130 ControlInformes
                     Row += 1;
                     If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                     If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                    If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                     FieldRef := RecReftemp.Field(Filtros.Campo);
 
                     if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
@@ -665,6 +672,7 @@ Codeunit 7001130 ControlInformes
                         Row += 1;
                         If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                         If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                        If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                         FieldRef := RecReftemp.Field(Filtros.Campo);
 
                         if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
@@ -1499,6 +1507,7 @@ Codeunit 7001130 ControlInformes
                 Row += 1;
                 If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                 If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                 FieldRef := RecReftemp.Field(Filtros.Campo);
 
                 if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin

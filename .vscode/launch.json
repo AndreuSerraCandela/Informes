@@ -14,7 +14,7 @@
             "startupObjectType": "Page",
             "environmentType": "OnPrem",
             "schemaUpdateMode": "Synchronize",
-            "breakOnError": true,
+            "breakOnError": "All",
             "launchBrowser": true,
             "enableLongRunningSqlStatements": true,
             "enableSqlInformationDebugger": true,

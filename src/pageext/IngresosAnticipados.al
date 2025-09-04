@@ -72,6 +72,7 @@ pageextension 93005 IngresosAnticipadosExt extends "Ingresos Anticipados"
                 Row += 1;
                 If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                 If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
+                If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                 FieldRef := RecReftemp.Field(Filtros.Campo);
                 if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
                     FieldRef.SetRange(DesdeFecha, HastaFecha);

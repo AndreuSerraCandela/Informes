@@ -71,7 +71,7 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
                     Row += 1;
                     If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                     If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
-
+                    If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                     FieldRef := RecReftemp.Field(Filtros.Campo);
                     if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
                         FieldRef.SetRange(DesdeFecha, HastaFecha);
@@ -105,7 +105,7 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
                         Row += 1;
                         If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                         If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
-
+                        If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                         FieldRef := RecReftemp.Field(Filtros.Campo);
                         if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
                             FieldRef.SetRange(DesdeFecha, HastaFecha);
@@ -560,7 +560,7 @@ pageextension 93003 PanoramaExt extends "PanoramaBY"
                 If Filtros.Desde <> DF then DesdeFecha := CalcDate(Filtros.Desde, WorkDate()) else DesdeFecha := 0D;
                 If Filtros.Hasta <> DF then HastaFecha := CalcDate(Filtros.Hasta, WorkDate()) else HastaFecha := Calcdate('99A', WorkDate());
                 FieldRef := RecReftemp.Field(Filtros.Campo);
-
+                If Filtros."Fecha Cierre" then HastaFecha := ClosingDate(HastaFecha);
                 if (filtros.Desde <> DF) or (Filtros.Hasta <> DF) then begin
                     FieldRef.SetRange(DesdeFecha, HastaFecha);
                     //'VERSION(1) SORTING(Tipo,Nº mov.) WHERE(Fecha vencimiento=FILTER(1925-04-11..2024-04-11),Cód. forma pago=FILTER(PAG. FIRMA|PAGARE))'

@@ -739,151 +739,10 @@ table 7001239 "Excel Buffer 2"
           GetExcelReference(4) + TempExcelBuf.xlColID + GetExcelReference(4) + ToxlRowID);
     end;
 
-    procedure ReadSheet()
-    begin
-        ReadSheetContinous('', true);
-    end;
 
-    procedure ReadSheetContinous(SheetName: Text; CloseBookOnCompletion: Boolean)
-    var
-        ColumnList: List of [Integer];
-        RowList: List of [Integer];
-    begin
-        ReadSheetContinous(SheetName, CloseBookOnCompletion, ColumnList, RowList, 0);
-    end;
 
-    procedure ReadSheetContinous(SheetName: Text; CloseBookOnCompletion: Boolean; ColumnList: List of [Integer]; RowList: List of [Integer]; MaxRowNo: Integer)
-    var
-        ExcelBufferDialogMgt: Codeunit "Excel Buffer Dialog Management";
-        CellData: DotNet CellData;
-        Enumerator: DotNet IEnumerator;
-        RowCount: Integer;
-        LastUpdate: DateTime;
-        ReadData: Boolean;
-    begin
-        // Allows reading Excel files with more than one sheet without closing and reopening file
-        if SheetName <> '' then
-            SetActiveReaderSheet(SheetName);
-        LastUpdate := CurrentDateTime;
-        ExcelBufferDialogMgt.Open(Text007);
-        DeleteAll();
 
-        Enumerator := XlWrkShtReader.GetEnumerator();
-        RowCount := XlWrkShtReader.RowCount;
-        ReadData := Enumerator.MoveNext();
-        while ReadData do begin
-            CellData := Enumerator.Current;
-            if CellData.HasValue() and ShouldReadCellData(CellData.ColumnNumber, CellData.RowNumber, ColumnList, RowList) then begin
-                Validate("Row No.", CellData.RowNumber);
-                Validate("Column No.", CellData.ColumnNumber);
-                ParseCellValue(CellData.Value, CellData.Format);
-                Insert();
 
-                if not UpdateProgressDialog(ExcelBufferDialogMgt, LastUpdate, CellData.RowNumber, RowCount) then begin
-                    CloseBook();
-                    Error(Text035)
-                end;
-            end;
-            ReadData := Enumerator.MoveNext();
-            if MaxRowNo = CellData.RowNumber then
-                ReadData := false;
-        end;
-
-        if CloseBookOnCompletion then
-            CloseBook();
-        ExcelBufferDialogMgt.Close();
-    end;
-
-    protected procedure ParseCellValue(Value: Text; FormatString: Text)
-    var
-        OutStream: OutStream;
-        Decimal: Decimal;
-        RoundingPrecision: Decimal;
-        IsHandled: Boolean;
-    begin
-        // The format contains only en-US number separators, this is an OpenXML standard requirement
-        // The algorithm sieves the data based on formatting as follows (the steps must run in this order)
-        // 1. FormatString = '@' -> Text
-        // 2. FormatString.Contains(':') -> Time
-        // 3. FormatString.ContainsOneOf('y', 'm', 'd') && FormatString.DoesNotContain('Red') -> Date
-        // 4. anything else -> Decimal
-
-        IsHandled := false;
-        OnBeforeParseCellValue(Rec, Value, FormatString, IsHandled);
-        if IsHandled then
-            exit;
-        //TODO: Check if the format string is valid
-        //NumberFormat := CopyStr(FormatString, 1, 30);
-
-        Clear("Cell Value as Blob");
-        if FormatString = '@' then begin
-            "Cell Type" := "Cell Type"::Text;
-            "Cell Value as Text" := CopyStr(Value, 1, MaxStrLen("Cell Value as Text"));
-
-            if StrLen(Value) <= MaxStrLen("Cell Value as Text") then
-                exit; // No need to store anything in the blob
-
-            "Cell Value as Blob".CreateOutStream(OutStream, TEXTENCODING::Windows);
-            OutStream.Write(Value);
-            exit;
-        end;
-
-        Evaluate(Decimal, Value);
-
-        if StrPos(FormatString, ':') <> 0 then begin
-            // Excel Time is stored in OADate format
-            "Cell Type" := "Cell Type"::Time;
-            "Cell Value as Text" := Format(DT2Time(ConvertDateTimeDecimalToDateTime(Decimal)));
-            exit;
-        end;
-
-        if ((StrPos(FormatString, 'y') <> 0) or
-            (StrPos(FormatString, 'm') <> 0) or
-            (StrPos(FormatString, 'd') <> 0)) and
-           (StrPos(FormatString, 'Red') = 0)
-        then begin
-            "Cell Type" := "Cell Type"::Date;
-            "Cell Value as Text" := Format(DT2Date(ConvertDateTimeDecimalToDateTime(Decimal)));
-            exit;
-        end;
-
-        "Cell Type" := "Cell Type"::Number;
-        RoundingPrecision := 0.000001;
-        OnParseCellValueOnBeforeRoundDecimal(Rec, Decimal, RoundingPrecision);
-        "Cell Value as Text" := Format(Round(Decimal, RoundingPrecision), 0, 1);
-    end;
-
-    [Scope('OnPrem')]
-    procedure SelectSheetsName(FileName: Text): Text[250]
-    var
-        TempBlob: Codeunit "Temp Blob";
-        InStr: InStream;
-    begin
-        if FileName = '' then
-            Error(Text001);
-
-        FileManagement.IsAllowedPath(FileName, false);
-        FileManagement.BLOBImportFromServerFile(TempBlob, FileName);
-        TempBlob.CreateInStream(InStr);
-        exit(SelectSheetsNameStream(InStr));
-    end;
-
-    procedure SelectSheetsNameStream(FileStream: InStream): Text[250]
-    var
-        TempNameValueBuffer: Record "Name/Value Buffer" temporary;
-        SelectedSheetName: Text[250];
-    begin
-        if GetSheetsNameListFromStream(FileStream, TempNameValueBuffer) then
-            if TempNameValueBuffer.Count = 1 then
-                SelectedSheetName := TempNameValueBuffer.Value
-            else begin
-                TempNameValueBuffer.FindFirst();
-                if PAGE.RunModal(PAGE::"Name/Value Lookup", TempNameValueBuffer) = ACTION::LookupOK then
-                    SelectedSheetName := TempNameValueBuffer.Value;
-            end;
-
-        exit(SelectedSheetName);
-    end;
 
     procedure GetExcelReference(Which: Integer): Text[250]
     begin
@@ -1198,79 +1057,6 @@ table 7001239 "Excel Buffer 2"
         CloseBook();
     end;
 
-    procedure OpenExcel()
-    begin
-        if OpenUsingDocumentService('') then
-            exit;
-
-        FileManagement.DownloadHandler(FileNameServer, '', '', Text034, GetFriendlyFilename());
-    end;
-
-    [Scope('OnPrem')]
-    procedure DownloadAndOpenExcel()
-    begin
-        OpenExcelWithName(GetFriendlyFilename());
-    end;
-
-    [Scope('OnPrem')]
-    procedure OpenExcelWithName(FileName: Text)
-    begin
-        if FileName = '' then
-            Error(Text001);
-
-        if OpenUsingDocumentService(FileName) then
-            exit;
-
-        FileManagement.DownloadHandler(FileNameServer, '', '', Text034, FileName);
-    end;
-
-    local procedure OpenUsingDocumentService(FileName: Text) Result: Boolean
-    var
-        DocumentServiceMgt: Codeunit "Document Service Management";
-        FileMgt: Codeunit "File Management";
-        PathHelper: DotNet Path;
-        DialogWindow: Dialog;
-        DocumentUrl: Text;
-        IsHandled: Boolean;
-    begin
-        IsHandled := false;
-        OnBeforeOpenUsingDocumentService(FileNameServer, Filename, Result, IsHandled);
-        if IsHandled then
-            exit(Result);
-
-        if not Exists(FileNameServer) then
-            Error(Text003, FileNameServer);
-
-        // if document service is configured we save the generated document to SharePoint and open it from there.
-        if DocumentServiceMgt.IsConfigured() then begin
-            if FileName = '' then
-                FileName := 'Book.' + PathHelper.ChangeExtension(PathHelper.GetRandomFileName(), 'xlsx')
-            else begin
-                // if file is not applicable for the service it can not be opened using the document service.
-                if not DocumentServiceMgt.IsServiceUri(FileName) then
-                    exit(false);
-
-                FileName := FileMgt.GetFileName(FileName);
-            end;
-
-            DialogWindow.Open(StrSubstNo(SavingDocumentMsg, FileName));
-            DocumentUrl := DocumentServiceMgt.SaveFile(FileNameServer, FileName, Enum::"Doc. Sharing Conflict Behavior"::Replace);
-            DocumentServiceMgt.OpenDocument(DocumentUrl);
-            DialogWindow.Close();
-            exit(true);
-        end;
-
-        exit(false);
-    end;
-
-    [Scope('OnPrem')]
-    procedure CreateBookAndOpenExcel(FileName: Text; SheetName: Text[250]; ReportHeader: Text; CompanyName2: Text; UserID2: Text; Orientacion: Enum Orientacion)
-    begin
-        CreateBook(FileName, SheetName);
-        WriteSheet(ReportHeader, CompanyName2, UserID2, Orientacion);
-        CloseBook();
-        OpenExcel();
-    end;
 
     local procedure UpdateProgressDialog(var ExcelBufferDialogManagement: Codeunit "Excel Buffer Dialog Management"; var LastUpdate: DateTime; CurrentCount: Integer; TotalCount: Integer): Boolean
     var
@@ -1301,19 +1087,7 @@ table 7001239 "Excel Buffer 2"
         FriendlyName := Name;
     end;
 
-    procedure ConvertDateTimeDecimalToDateTime(DateTimeAsOADate: Decimal): DateTime
-    var
-        DotNetDateTime: DotNet DateTime;
-        DateTimeResult: DateTime;
-        DotNetDateTimeKind: DotNet DateTimeKind;
-    begin
-        DotNetDateTime := DotNetDateTime.FromOADate(DateTimeAsOADate);
-        if ReadDateTimeInUtcDate then
-            Evaluate(DateTimeResult, DotNetDateTime.ToString())
-        else
-            DateTimeResult := DotNetDateTime.DateTime(DotNetDateTime.Ticks, DotNetDateTimeKind.Local);
-        exit(DateTimeResult);
-    end;
+
 
     procedure SaveToStream(var ResultStream: OutStream; EraseFileAfterCompletion: Boolean)
     var
@@ -1327,48 +1101,6 @@ table 7001239 "Excel Buffer 2"
             FILE.Erase(FileNameServer);
     end;
 
-    procedure GetSheetsNameListFromStream(FileStream: InStream; var TempNameValueBufferOut: Record "Name/Value Buffer" temporary) SheetsFound: Boolean
-    var
-        SheetNames: DotNet StringArray;
-        SheetName: Text[250];
-        i: Integer;
-    begin
-        XlWrkBkReader := XlWrkBkReader.Open(FileStream);
-        TempNameValueBufferOut.Reset();
-        TempNameValueBufferOut.DeleteAll();
-        //SheetNames := SheetNames.ArrayList(XlWrkBkReader.SheetNames());
-        SheetNames := (XlWrkBkReader.SheetNames());
-        if IsNull(SheetNames) then
-            exit(false);
-
-        SheetsFound := SheetNames.Length > 0;
-
-        if not SheetsFound then
-            exit(false);
-        foreach SheetName in SheetNames do begin
-            if SheetName <> '' then begin
-                i += 1;
-                TempNameValueBufferOut.Init();
-                TempNameValueBufferOut.ID := i;
-                TempNameValueBufferOut.Name := Format(i + 1);
-                TempNameValueBufferOut.Value := SheetName;
-                TempNameValueBufferOut.Insert();
-            end;
-        end;
-
-        // for i := 0 to SheetNames.Length - 1 do begin
-        //     SheetName := SheetNames. Item(i);
-        //     if SheetName <> '' then begin
-        //         TempNameValueBufferOut.Init();
-        //         TempNameValueBufferOut.ID := i;
-        //         TempNameValueBufferOut.Name := Format(i + 1);
-        //         TempNameValueBufferOut.Value := SheetName;
-        //         TempNameValueBufferOut.Insert();
-        //     end;
-        // end;
-
-        CloseBook();
-    end;
 
     local procedure ShouldReadCellData(ColumnNo: Integer; RowNo: Integer; ColumnList: List of [Integer]; RowList: List of [Integer]): Boolean
     begin
