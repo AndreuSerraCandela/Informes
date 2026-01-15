@@ -5,45 +5,46 @@
     "brief": "",
     "target": "OnPrem",
     "description": "",
-    
-    "version": "1.0.0.2",
+    "version": "1.0.0.4",
     "privacyStatement": "",
     "EULA": "",
     "help": "",
     "url": "http://www.malla.es/",
     "logo": "res/Grupo.png",
     "dependencies": [
-      {
-        "id": "7a7d3479-e693-4f3d-8336-aac424523182",
-        "name": "Malla Wave 2.0",
-        "publisher": "Grupo Malla by Andreu",
-        "version": "2.1.5.9"
-      },
-      {
-        "id": "d9cb442a-be20-49a4-a6d6-9ad6a9fbd205",
-        "name": "PowerBiMalla",
-        "publisher": "Andreu Serra",
-        "version": "1.0.0.4"
-      },
-      {
-        "id": "7a7d3479-e693-4f3d-8336-aac424523186",
-        "name": "Ocr Malla",
-        "publisher": "Andreu Serra",
-        "version": "2.1.3.0"
-      }
-     
-      
-      
+        {
+            "id": "7a7d3479-e693-4f3d-8336-aac424523182",
+            "name": "Malla Wave 2.0",
+            "publisher": "Grupo Malla by Andreu",
+            "version": "2.1.6.1"
+        },
+        {
+            "id": "43635513-cb1d-447c-bc2b-a8495e96a0b7",
+            "name": "Funciones",
+            "publisher": "Grupo Malla by Andreu",
+            "version": "1.0.0.1"
+        },
+        {
+            "id": "d9cb442a-be20-49a4-a6d6-9ad6a9fbd205",
+            "name": "PowerBiMalla",
+            "publisher": "Andreu Serra",
+            "version": "1.0.0.6"
+        },
+        {
+            "id": "7a7d3479-e693-4f3d-8336-aac424523186",
+            "name": "Ocr Malla",
+            "publisher": "Andreu Serra",
+            "version": "2.1.3.2"
+        }
     ],
     "screenshots": [],
-    "platform": "1.0.0.0",
-    "idRanges": [ 
-    ],
-    "application": "24.0.0.0",
+    "platform": "27.0.0.0",
+    "idRanges": [],
+    "application": "26.5.38752.38944",
     "resourceExposurePolicy": {
-      "allowDebugging": true,
-      "allowDownloadingSource": true,
-      "includeSourceInSymbolFile": false
+        "allowDebugging": true,
+        "allowDownloadingSource": true,
+        "includeSourceInSymbolFile": false
     },
-    "runtime": "13.1"
-  }
+    "runtime": "15.0"
+}

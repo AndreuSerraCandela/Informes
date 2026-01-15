@@ -122,6 +122,7 @@ page 7001193 "Informes Setup Wizard"
                                     ObjectIdLookup := TenantWebService."Id Objeto";
                                     ServiceNameLookup := TenantwebService.Descripcion;
                                     ObjectTypeLookup := TenantWebService."Tipo Objeto";
+                                    IdInforme := TenantWebService."ID";
 
                                 end;
                                 Rec.Descripcion := ServiceNameLookup;
@@ -194,6 +195,7 @@ page 7001193 "Informes Setup Wizard"
                         var
                             AllObjWithCaption: Record AllObjWithCaption;
                             AllObjectsWithCaption: Page "All Objects with Caption";
+                            Informes: Record "Informes";
                         begin
                             if ObjectTypeLookup = Rec."Tipo Objeto"::Page then begin
                                 AllObjWithCaption.SetRange("Object Type", AllObjWithCaption."Object Type"::Page);
@@ -222,6 +224,11 @@ page 7001193 "Informes Setup Wizard"
                                     ClearTables();
                                 Rec.InitColumns(ObjectTypeLookup, Rec."Id Objeto", ActionType, ServiceNameLookup, ServiceNameEdit);
                                 Rec.GetColumnsTemp(TempTenantWebServiceColumns);
+                                if ActionType = ActionType::"Create a copy of an existing data set" then begin
+                                    TempTenantWebServiceColumns.DeleteAll();
+                                    Informes.Get(IdInforme);
+                                    Informes.GetColumnsTemp(TempTenantWebServiceColumns);
+                                end;
                                 CurrPage.ODataColSubForm.Page.CargarDatos(TempTenantWebServiceColumns);
                             end;
                         end;
@@ -456,6 +463,8 @@ page 7001193 "Informes Setup Wizard"
                 InFooterBar = true;
 
                 trigger OnAction()
+                var
+                    Informes: Record "Informes";
                 begin
                     case CurrentPage of
                         1, 2:
@@ -474,6 +483,12 @@ page 7001193 "Informes Setup Wizard"
                                     Error(MissingObjectIDErr);
 
                                 CurrPage.Update();
+                                if ActionType = ActionType::"Create a copy of an existing data set" then begin
+                                    TempTenantWebServiceColumns.DeleteAll();
+                                    Informes.Get(IdInforme);
+                                    Informes.GetColumnsTemp(TempTenantWebServiceColumns);
+                                    CurrPage.ODataColSubForm.Page.CargarDatos(TempTenantWebServiceColumns);
+                                end;
                                 Rec.InitColumns(ObjectTypeLookup, Rec."Id Objeto", ActionType, ServiceNameLookup, ServiceNameEdit);
                                 CurrentPage := CurrentPage + 1;
                             end;
@@ -622,6 +637,7 @@ page 7001193 "Informes Setup Wizard"
         WebServiceNameNotValidErr: Label 'El nombre del informe no es válido. Por favor, introduzca un nombre sin espacios.';
         ChangeFields: Boolean;
         ActionType: Option "Create a new data set","Create a copy of an existing data set","Edit an existing data set";
+        IdInforme: Integer;
         ObjectIdLookup: Integer;
         ServiceNameLookup: Text;
         ServiceNameEdit: Text[240];
